@@ -1,0 +1,191 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Navbar from "../../../components/Navbar.astro";
+import Footer from "../../../components/Footer.astro";
+import ParticleBackground from "../../../components/ParticleBackground.astro";
+import ProjectHero from "../../../components/project/ProjectHero.astro";
+import ProjectDetails from "../../../components/project/ProjectDetails.astro";
+import RelatedProjects from "../../../components/project/RelatedProjects.astro";
+import { projects } from "../../../data/projects";
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+const locale = "es";
+const { project } = Astro.props;
+const site = "https://www.agustin.top";
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Inicio", item: `${site}/${locale}/` },
+    { "@type": "ListItem", position: 2, name: "Proyectos", item: `${site}/${locale}/projects/` },
+    { "@type": "ListItem", position: 3, name: project.title[locale], item: `${site}/${locale}/projects/${project.slug}/` },
+  ],
+};
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${project.title[locale]} | Agustín Avellaneda`}
+  description={project.shortDescription[locale]}
+  image={`https://www.agustin.top${project.image}`}
+  canonicalPath={`projects/${project.slug}`}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
+  </Fragment>
+  <Navbar locale={locale} />
+  <ParticleBackground />
+  <main class="project-page">
+    <ProjectHero locale={locale} project={project} />
+    <ProjectDetails locale={locale} project={project} />
+    <RelatedProjects locale={locale} project={project} />
+
+    <section class="project-cta">
+      <div class="project-cta-inner">
+        <h2 class="project-cta-title">Tenés una idea en mente?</h2>
+        <p class="project-cta-text">Puedo ayudarte a convertirla en un producto real. Desde la concepcion hasta el MVP funcionando.</p>
+        <div class="project-cta-actions">
+          <a class="project-cta-primary" href={`/${locale}/#hero`}>Desarrollar mi idea</a>
+          <button class="project-cta-secondary" type="button" data-contact-btn>Contactar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer locale={locale} />
+</BaseLayout>
+
+<script is:inline>
+(function() {
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion) return;
+  var sections = document.querySelectorAll('.project-page > section');
+  function onScroll() {
+    var sy = window.scrollY;
+    sections.forEach(function(sec, i) {
+      var rect = sec.getBoundingClientRect();
+      var raw = (rect.top + sy) * 0.02 * (i % 2 === 0 ? 1 : -1);
+      var offset = Math.max(-12, Math.min(12, raw));
+      sec.style.transform = 'translateY(' + offset + 'px)';
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+<script is:inline>
+(function() {
+  var btn = document.querySelector('[data-contact-btn]');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Enviando...';
+    btn.disabled = true;
+    fetch('/api/send-idea', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '',
+        email: '',
+        message: 'Vi el proyecto "' + document.title.split('|')[0].trim() + '" en tu portfolio. Tengo una idea que me gustaria desarrollar.',
+        type: 'contact',
+        language: 'es'
+      })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) { btn.textContent = 'Enviado!'; }
+      else { throw new Error(res.error); }
+      setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 2000);
+    }).catch(function() {
+      btn.textContent = 'Error - reintentá';
+      setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 2000);
+    });
+  });
+})();
+</script>
+
+<style is:global>
+  .project-page > section {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.1s linear;
+  }
+  .project-cta {
+    position: relative;
+    z-index: 1;
+    padding: 96px 0;
+  }
+  .project-cta-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 48px 32px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-bg-panel);
+  }
+  .project-cta-title {
+    font-family: var(--font-grotesk);
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 600;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .project-cta-text {
+    font-size: 15px;
+    color: var(--color-text-dim);
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .project-cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .project-cta-primary {
+    display: inline-block;
+    background: var(--color-accent);
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .2s;
+  }
+  .project-cta-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(59,130,246,0.25);
+  }
+  .project-cta-secondary {
+    display: inline-block;
+    background: transparent;
+    color: var(--color-text-dim);
+    border: 1px solid var(--color-line);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: border-color .2s, color .2s;
+  }
+  .project-cta-secondary:hover {
+    border-color: var(--color-text-faint);
+    color: var(--color-text);
+  }
+  @media (max-width: 720px) {
+    .project-cta { padding: 64px 0; }
+    .project-cta-inner { padding: 32px 20px; }
+  }
+</style>

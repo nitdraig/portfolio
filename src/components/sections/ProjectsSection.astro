@@ -1,0 +1,385 @@
+---
+import type { Locale } from "../../i18n/ui";
+import { ui } from "../../i18n/ui";
+import { projects, type Project } from "../../data/projects";
+import {
+  DELIVERY_TYPES,
+  type DeliveryType,
+  type Industry,
+} from "../../data/projectTaxonomy";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale].projects;
+const prefix = `/${locale}`;
+
+function sortRank(project: Project): number {
+  if (typeof project.homeOrder === "number") return project.homeOrder;
+  return project.featured ? 50 : 200;
+}
+
+const orderedProjects = [...projects].sort((a, b) => sortRank(a) - sortRank(b));
+
+function industryLabel(industry: Industry): string {
+  return t.filters.industry[industry] ?? industry;
+}
+
+function deliveryLabel(type: DeliveryType): string {
+  return t.filters.delivery[type] ?? type;
+}
+
+const usedDeliveryTypes = DELIVERY_TYPES.filter((type) =>
+  orderedProjects.some((p) => p.deliveryType === type),
+);
+
+const usedIndustries = (
+  Array.from(new Set(orderedProjects.map((p) => p.industry))) as Industry[]
+)
+  .filter((industry) => Boolean(t.filters.industry[industry]))
+  .sort((a, b) => industryLabel(a).localeCompare(industryLabel(b), locale));
+
+const filterOptions = [
+  ...usedDeliveryTypes.map((type) => ({
+    group: "delivery" as const,
+    value: type,
+    label: deliveryLabel(type),
+  })),
+  ...usedIndustries.map((industry) => ({
+    group: "industry" as const,
+    value: industry,
+    label: industryLabel(industry),
+  })),
+];
+---
+
+<section id="projects" class="py-20 px-4 bg-white">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12 reveal">
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">{t.title}</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+    </div>
+
+    <div
+      id="projects-filters"
+      class="reveal mb-10 space-y-4"
+      data-initial-visible="3"
+    >
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <label for="projects-filter-select" class="sr-only">{t.filters.add}</label>
+        <div class="relative w-full sm:max-w-xs">
+          <select
+            id="projects-filter-select"
+            class="w-full min-h-11 appearance-none rounded-md border border-gray-300 bg-white pl-3 pr-10 py-2.5 text-sm text-gray-900 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+          >
+            <option value="">{t.filters.placeholder}</option>
+            <optgroup label={t.filters.deliveryLabel}>
+              {
+                usedDeliveryTypes.map((type) => (
+                  <option value={`delivery:${type}`}>{deliveryLabel(type)}</option>
+                ))
+              }
+            </optgroup>
+            <optgroup label={t.filters.industryLabel}>
+              {
+                usedIndustries.map((industry) => (
+                  <option value={`industry:${industry}`}>{industryLabel(industry)}</option>
+                ))
+              }
+            </optgroup>
+          </select>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </div>
+
+        <button
+          type="button"
+          id="projects-clear-filters"
+          class="hidden self-start sm:self-auto text-sm font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
+        >
+          {t.filters.clear}
+        </button>
+      </div>
+
+      <div
+        id="projects-active-filters"
+        class="flex flex-wrap gap-2 min-h-9"
+        aria-live="polite"
+      ></div>
+
+      <p id="projects-filter-count" class="text-sm text-gray-500" aria-live="polite"></p>
+    </div>
+
+    <div id="projects-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+      {
+        orderedProjects.map((project, index) => (
+          <article
+            class:list={[
+              "project-card group flex flex-col cursor-pointer reveal border border-gray-200 rounded-lg shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden h-full bg-white",
+              index >= 3 && "hidden",
+            ]}
+            data-delivery={project.deliveryType}
+            data-industry={project.industry}
+          >
+            <div class={`relative h-48 shrink-0 bg-gradient-to-br ${project.color} flex items-center justify-center overflow-hidden`}>
+              <img
+                src={project.image}
+                alt={`${project.title[locale]} - Project screenshot`}
+                class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 group-hover:rotate-[2deg] transition-transform duration-300"
+                width="400"
+                height="192"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-black/50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <a
+                  href={project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-900 hover:bg-gray-100"
+                  aria-label="Demo"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </a>
+                <a
+                  href={`${prefix}/projects/${project.slug}`}
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-900 hover:bg-gray-100"
+                  aria-label={t.view}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <div class="p-6 pb-3 flex-1 flex flex-col min-h-0">
+              <div class="flex flex-wrap gap-2 mb-2">
+                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  {deliveryLabel(project.deliveryType)}
+                </span>
+                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  {industryLabel(project.industry)}
+                </span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-2 min-h-[3.5rem]">
+                {project.title[locale]}
+              </h3>
+              <p class="text-gray-600 mt-1 line-clamp-3 min-h-[4.5rem]">
+                {project.shortDescription[locale]}
+              </p>
+              {project.highlightMetric && (
+                <p class="mt-3 text-sm font-semibold text-gray-900">
+                  {project.highlightMetric[locale]}
+                </p>
+              )}
+            </div>
+
+            <div class="px-6 pb-6 mt-auto">
+              <div class="flex flex-wrap gap-2 mb-4 min-h-[3.5rem] content-start overflow-hidden">
+                {
+                  project.tags.slice(0, 4).map((tag) => (
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                      {tag}
+                    </span>
+                  ))
+                }
+                {
+                  project.tags.length > 4 && (
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                      +{project.tags.length - 4}
+                    </span>
+                  )
+                }
+              </div>
+
+              <div class="flex gap-2 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
+                <a
+                  href={project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group/demo flex-1 inline-flex items-center justify-center rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-0 w-0 opacity-0 overflow-hidden group-hover/demo:mr-1 group-hover/demo:w-3 group-hover/demo:opacity-100 transition-all duration-200" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                  {t.demo}
+                </a>
+                <a
+                  href={`${prefix}/projects/${project.slug}`}
+                  class="group/view flex-1 inline-flex items-center justify-center rounded-md bg-gray-900 hover:bg-gray-800 text-white px-3 py-2 text-sm font-medium"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-0 w-0 opacity-0 overflow-hidden group-hover/view:mr-1 group-hover/view:w-3 group-hover/view:opacity-100 transition-all duration-200" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  {t.view}
+                </a>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <p id="projects-empty" class="hidden text-center text-gray-600 mt-8">{t.filters.empty}</p>
+
+    <div id="show-more-wrap" class="text-center mt-12 reveal">
+      <button
+        id="show-more-projects"
+        type="button"
+        class="inline-flex items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold px-8 py-3 bg-transparent transition-colors"
+      >
+        {t.showMore}
+      </button>
+    </div>
+  </div>
+</section>
+
+<script
+  define:vars={{
+    filterOptions,
+    removeLabel: t.filters.remove,
+  }}
+>
+  const filtersRoot = document.getElementById("projects-filters");
+  const selectEl = document.getElementById("projects-filter-select");
+  const activeWrap = document.getElementById("projects-active-filters");
+  const cards = Array.from(document.querySelectorAll(".project-card"));
+  const emptyEl = document.getElementById("projects-empty");
+  const showMoreBtn = document.getElementById("show-more-projects");
+  const showMoreWrap = document.getElementById("show-more-wrap");
+  const clearBtn = document.getElementById("projects-clear-filters");
+  const countEl = document.getElementById("projects-filter-count");
+  const initialVisible = Number(filtersRoot?.dataset.initialVisible || 3);
+
+  /** @type {Set<string>} keys like "delivery:mvp" or "industry:healthcare" */
+  const activeFilters = new Set();
+  let visibleLimit = initialVisible;
+
+  function labelFor(key) {
+    const opt = filterOptions.find((o) => `${o.group}:${o.value}` === key);
+    return opt?.label || key;
+  }
+
+  function filtersActive() {
+    return activeFilters.size > 0;
+  }
+
+  function cardMatches(card) {
+    const deliveries = [];
+    const industries = [];
+    for (const key of activeFilters) {
+      const [group, value] = key.split(":");
+      if (group === "delivery") deliveries.push(value);
+      if (group === "industry") industries.push(value);
+    }
+
+    const d = card.dataset.delivery;
+    const i = card.dataset.industry;
+    // Same dimension = OR; across dimensions = AND
+    if (deliveries.length > 0 && !deliveries.includes(d)) return false;
+    if (industries.length > 0 && !industries.includes(i)) return false;
+    return true;
+  }
+
+  function syncSelectOptions() {
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach((opt) => {
+      if (!opt.value) return;
+      opt.disabled = activeFilters.has(opt.value);
+      opt.hidden = activeFilters.has(opt.value);
+    });
+  }
+
+  function renderActiveChips() {
+    if (!activeWrap) return;
+    activeWrap.replaceChildren();
+
+    for (const key of activeFilters) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className =
+        "inline-flex items-center gap-1.5 rounded-md border border-gray-900 bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800";
+      chip.dataset.filterKey = key;
+      chip.setAttribute("aria-label", `${removeLabel}: ${labelFor(key)}`);
+
+      const text = document.createElement("span");
+      text.textContent = labelFor(key);
+
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("width", "14");
+      icon.setAttribute("height", "14");
+      icon.setAttribute("viewBox", "0 0 24 24");
+      icon.setAttribute("fill", "none");
+      icon.setAttribute("stroke", "currentColor");
+      icon.setAttribute("stroke-width", "2");
+      icon.setAttribute("aria-hidden", "true");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M18 6 6 18");
+      const path2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path2.setAttribute("d", "m6 6 12 12");
+      icon.append(path, path2);
+
+      chip.append(text, icon);
+      chip.addEventListener("click", () => {
+        activeFilters.delete(key);
+        applyFilters({ resetLimit: true });
+      });
+      activeWrap.append(chip);
+    }
+  }
+
+  function applyFilters({ resetLimit = false } = {}) {
+    if (resetLimit) visibleLimit = initialVisible;
+
+    const matched = cards.filter(cardMatches);
+    const active = filtersActive();
+    const limit = active ? matched.length : visibleLimit;
+
+    cards.forEach((card) => card.classList.add("hidden"));
+    matched.slice(0, limit).forEach((card) => card.classList.remove("hidden"));
+
+    const shown = Math.min(matched.length, limit);
+    if (emptyEl) emptyEl.classList.toggle("hidden", matched.length > 0);
+    if (showMoreWrap) {
+      showMoreWrap.classList.toggle("hidden", active || matched.length <= shown);
+    }
+    if (clearBtn) clearBtn.classList.toggle("hidden", !active);
+    if (countEl) {
+      countEl.textContent =
+        matched.length === cards.length ? "" : `${shown} / ${matched.length}`;
+    }
+
+    renderActiveChips();
+    syncSelectOptions();
+  }
+
+  selectEl?.addEventListener("change", () => {
+    const value = selectEl.value;
+    if (!value) return;
+    activeFilters.add(value);
+    selectEl.value = "";
+    applyFilters({ resetLimit: true });
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    activeFilters.clear();
+    if (selectEl) selectEl.value = "";
+    applyFilters({ resetLimit: true });
+  });
+
+  showMoreBtn?.addEventListener("click", () => {
+    visibleLimit += initialVisible;
+    applyFilters();
+  });
+
+  applyFilters();
+</script>

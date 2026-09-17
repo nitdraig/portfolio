@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idea Analysis — Agustín</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f7;
+    --bg-panel:#ffffff;
+    --bg-overlay:rgba(255,255,255,0.96);
+    --line:#dfe0e4;
+    --text:#111214;
+    --text-dim:#4b4d52;
+    --text-faint:#8e9096;
+    --accent:#3b82f6;
+    --accent-dim:#1d4ed8;
+    --accent-glow:rgba(59,130,246,0.16);
+    --text-inverse:#ffffff;
+    --vignette:rgba(0,0,0,0.10);
+    --shadow:rgba(0,0,0,0.12);
+    --overlay:rgba(0,0,0,0.35);
+    --veil:#f5f5f7;
+    --highlight:rgba(0,0,0,0.03);
+    --grain-opacity:0.05;
+    --radius:2px;
+    --mono:'IBM Plex Mono', monospace;
+    --grotesk:'Space Grotesk', sans-serif;
+    --sans:'Inter', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0a0a0b;
+      --bg-panel:#111214;
+      --bg-overlay:rgba(13,13,15,0.95);
+      --line:#232427;
+      --text:#eeeeec;
+      --text-dim:#9a9c9f;
+      --text-faint:#5e6063;
+      --accent:#3b82f6;
+      --accent-dim:#1e40af;
+      --accent-glow:rgba(59,130,246,0.22);
+      --text-inverse:#0a0a0b;
+      --vignette:rgba(0,0,0,0.55);
+      --shadow:rgba(0,0,0,0.55);
+      --overlay:rgba(6,6,7,0.7);
+      --veil:#000;
+      --highlight:rgba(255,255,255,0.04);
+      --grain-opacity:0.035;
+    }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent); color:var(--text-inverse);}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  .scanlines{
+    position:fixed; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(128,128,128,0.05) 0px, rgba(128,128,128,0.05) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:39; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%, transparent 45%, var(--vignette) 100%);
+  }
+  .grain{
+    position:fixed; inset:0; z-index:41; pointer-events:none; opacity:var(--grain-opacity); mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px;
+  }
+  .logo{font-family:var(--grotesk); font-weight:600; font-size:15px; letter-spacing:0.02em;}
+  .logo a{color:inherit;}
+  nav.links{display:flex; gap:28px; align-items:center; font-size:13px; font-family:var(--mono);}
+  nav.links a{opacity:0.75; transition:opacity .2s;}
+  nav.links a:hover{opacity:1;}
+  .hamburger{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:4px;
+    width:32px; height:32px; padding:0; background:none;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:var(--text); }
+  @media (max-width:720px){ nav.links{display:none;} .hamburger{display:flex;} }
+
+  .mobile-menu{
+    position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column;
+    padding:22px 32px; opacity:0; transition:opacity .3s ease;
+  }
+  .mobile-menu.show{ display:flex; opacity:1; }
+  .mobile-close{ align-self:flex-end; font-size:32px; color:var(--text); line-height:1; padding:4px; }
+  .mobile-links{ display:flex; flex-direction:column; gap:18px; margin-top:48px; font-family:var(--grotesk); font-size:clamp(1.8rem,6vw,2.6rem); font-weight:600; }
+  .mobile-links a{ opacity:0.85; transition:opacity .2s; }
+  .mobile-links a:hover{ opacity:1; }
+
+  main{
+    position:relative; z-index:10;
+    max-width:820px; margin:0 auto;
+    padding:120px 32px 100px;
+  }
+  .empty{
+    min-height:60vh; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px;
+  }
+  .empty.show{display:flex;}
+  .empty p{color:var(--text-dim); font-size:15px;}
+  .empty a{
+    font-family:var(--mono); font-size:13px; color:var(--accent);
+    border-bottom:1px solid var(--accent-dim);
+  }
+
+  .stage-label{
+    font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .stage-title{
+    font-family:var(--grotesk); font-size:clamp(2rem,5vw,3.4rem); font-weight:600; line-height:1.1; letter-spacing:-0.015em;
+    margin-bottom:64px;
+  }
+  .stage-section{margin-bottom:48px;}
+  .stage-section-title{
+    font-family:var(--mono); font-size:10px; color:var(--text-faint); letter-spacing:0.04em; text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .stage-text{
+    font-size:15px; color:var(--text-dim); line-height:1.65;
+  }
+  .stage-chips{
+    display:flex; flex-wrap:wrap; gap:8px;
+  }
+  .stage-chips span{
+    font-family:var(--mono); font-size:12px; border:1px solid var(--line);
+    padding:6px 12px; border-radius:20px; color:var(--text-dim);
+  }
+  .stage-cards{
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .stage-card{
+    display:block; background:var(--bg-panel); border:1px solid var(--line); border-radius:8px;
+    padding:18px; transition:border-color .2s, transform .15s;
+  }
+  .stage-card:hover{ border-color:var(--accent-dim); transform:translateY(-1px); }
+  .stage-card-head{
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:6px;
+  }
+  .stage-card-title{font-family:var(--grotesk); font-size:16px; font-weight:600;}
+  .stage-card-meta{font-family:var(--mono); font-size:11px; color:var(--accent); text-transform:uppercase;}
+  .stage-card-view{font-family:var(--mono); font-size:11px; color:var(--text-faint); transition:color .2s;}
+  .stage-card:hover .stage-card-view{color:var(--accent);}
+
+  .stage-list{
+    list-style:none; display:flex; flex-direction:column; gap:12px;
+  }
+  .stage-list li{
+    font-size:14px; color:var(--text-dim); padding-left:20px; position:relative; line-height:1.55;
+  }
+  .stage-list li::before{
+    content:'→'; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-size:11px;
+  }
+
+  .stage-actions{
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:64px;
+  }
+  .btn-primary{
+    background:var(--accent); color:var(--text-inverse); font-family:var(--mono); font-size:12px; font-weight:500;
+    padding:10px 18px; border-radius:6px; transition:transform .15s, box-shadow .2s;
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(59,130,246,0.25); }
+  .btn-secondary{
+    background:transparent; color:var(--text-dim); border:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; padding:10px 18px; border-radius:6px;
+    transition:border-color .2s, color .2s;
+  }
+  .btn-secondary:hover{ border-color:var(--text-faint); color:var(--text); }
+
+  .reveal{ opacity:0; transform:translateY(12px); animation:fade-up .6s ease forwards; }
+  @keyframes fade-up{ to{ opacity:1; transform:translateY(0); } }
+
+  @media (max-width:720px){
+    header{padding:18px 22px;}
+    main{padding:96px 22px 80px;}
+    .stage-title{margin-bottom:48px;}
+    .stage-actions{margin-top:48px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><a href="index.html">agustin.top</a></div>
+  <nav class="links">
+    <a href="index.html#proof">WORK</a>
+    <a href="index.html#understand">AI</a>
+    <a href="about.html">ABOUT</a>
+  </nav>
+  <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+<div class="mobile-menu" id="mobile-menu">
+  <button class="mobile-close" id="mobile-close" aria-label="Close menu">×</button>
+  <nav class="mobile-links">
+    <a href="index.html#proof">WORK</a>
+    <a href="index.html#understand">AI</a>
+    <a href="about.html">ABOUT</a>
+  </nav>
+</div>
+
+<main id="main">
+  <div class="empty" id="empty">
+    <p>No idea to analyze.</p>
+    <a href="index.html">← Back to orbit</a>
+  </div>
+</main>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="grain"></div>
+
+<script>
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAnalysis(){
+  const raw = sessionStorage.getItem('agustinIdeaAnalysis');
+  const emptyEl = document.getElementById('empty');
+  if(!raw){
+    emptyEl.classList.add('show');
+    return;
+  }
+
+  let data;
+  try{ data = JSON.parse(raw); }catch(e){ data = null; }
+  if(!data || !data.idea){
+    emptyEl.classList.add('show');
+    return;
+  }
+
+  const subject = encodeURIComponent(`Idea: ${data.idea.substring(0, 50)}`);
+  const body = encodeURIComponent(
+    `Hi Agustín,\n\nI have an idea I would like to build:\n\n"${data.idea}"\n\n` +
+    `Inferred components: ${(data.tags || []).join(', ')}\n\n` +
+    `MVP proposal:\n${(data.mvp || []).map((s, i) => `${i+1}. ${s}`).join('\n')}\n\n` +
+    `Next steps:\n${(data.steps || []).map((s, i) => `${i+1}. ${s}`).join('\n')}\n\n` +
+    `Let's talk.`
+  );
+  const mailto = `mailto:hola@agustin.top?subject=${subject}&body=${body}`;
+
+  const projectsHtml = (data.projects || []).slice(0,3).map((p) => `
+    <a class="stage-card" href="index.html#proof">
+      <div class="stage-card-head">
+        <span class="stage-card-title">${escapeHtml(p.title)}</span>
+        <span class="stage-card-view">View →</span>
+      </div>
+      <div class="stage-card-meta">${escapeHtml(p.category)} · ${escapeHtml(p.type)}</div>
+    </a>
+  `).join('');
+
+  const mvpHtml = (data.mvp || []).map((item) => `
+    <li>${escapeHtml(item)}</li>
+  `).join('');
+
+  const stepsHtml = (data.steps || []).map((item) => `
+    <li>${escapeHtml(item)}</li>
+  `).join('');
+
+  const tagsHtml = (data.tags || []).map((t) => `
+    <span>${escapeHtml(t)}</span>
+  `).join('');
+
+  document.getElementById('main').insertAdjacentHTML('beforeend', `
+    <div class="stage-label reveal" style="animation-delay:0ms">IDEA ANALYSIS</div>
+    <h1 class="stage-title reveal" style="animation-delay:80ms">${escapeHtml(data.idea)}</h1>
+
+    <section class="stage-section reveal" style="animation-delay:140ms">
+      <div class="stage-section-title">You said</div>
+      <div class="stage-text">${escapeHtml(data.idea)}</div>
+    </section>
+
+    <section class="stage-section reveal" style="animation-delay:220ms">
+      <div class="stage-section-title">Inferred components</div>
+      <div class="stage-chips">${tagsHtml}</div>
+    </section>
+
+    <section class="stage-section reveal" style="animation-delay:300ms">
+      <div class="stage-section-title">Similar projects</div>
+      <div class="stage-cards">${projectsHtml || '<div class="stage-text">No direct matches in the portfolio yet — this idea is a fresh direction.</div>'}</div>
+    </section>
+
+    <section class="stage-section reveal" style="animation-delay:400ms">
+      <div class="stage-section-title">MVP proposal</div>
+      <ul class="stage-list">${mvpHtml}</ul>
+    </section>
+
+    <section class="stage-section reveal" style="animation-delay:500ms">
+      <div class="stage-section-title">Next steps</div>
+      <ul class="stage-list">${stepsHtml}</ul>
+    </section>
+
+    <div class="stage-actions reveal" style="animation-delay:620ms">
+      <a class="btn-primary" href="${mailto}">Build this MVP</a>
+      <a class="btn-secondary" href="index.html" id="new-idea-btn">New idea</a>
+      <a class="btn-secondary" href="index.html">Back to orbit</a>
+    </div>
+  `);
+
+  document.getElementById('new-idea-btn').addEventListener('click', () => {
+    sessionStorage.removeItem('agustinIdeaAnalysis');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', renderAnalysis);
+
+(function(){
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileClose = document.getElementById('mobile-close');
+  if(!hamburger || !mobileMenu) return;
+  function open(){ mobileMenu.classList.add('show'); hamburger.setAttribute('aria-expanded','true'); document.documentElement.classList.add('locked'); }
+  function close(){ mobileMenu.classList.remove('show'); hamburger.setAttribute('aria-expanded','false'); document.documentElement.classList.remove('locked'); }
+  hamburger.addEventListener('click', open);
+  mobileClose.addEventListener('click', close);
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => { close(); });
+  });
+})();
+
+window.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    window.location.href = 'index.html';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+---
+import "@fontsource/space-grotesk/400.css";
+import "@fontsource/space-grotesk/600.css";
+import "@fontsource/space-grotesk/700.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "../styles/global.css";
+import type { Locale } from "../i18n/ui";
+import { getLocalizedPath } from "../i18n/utils";
+import Navbar from "../components/Navbar.astro";
+import CmdPalette from "../components/CmdPalette.astro";
+import ParticleBackground from "../components/ParticleBackground.astro";
+import { SKILLS } from "../data/experience";
+
+interface Props {
+  locale: Locale;
+  title?: string;
+  description?: string;
+  image?: string;
+  canonicalPath?: string;
+  noindex?: boolean;
+}
+
+const {
+  locale,
+  title = "Agustín Avellaneda | AI-Powered Fullstack Developer & Project Manager",
+  description = locale === "es"
+    ? "Desarrollador Fullstack especializado en IA y gestión de proyectos. Transformo ideas en productos exitosos usando tecnologías modernas."
+    : "AI-Powered Fullstack Developer & Project Manager. I turn ideas into shipped products using modern tech.",
+  image = "https://www.agustin.top/og-image.webp",
+  canonicalPath = "",
+  noindex = false,
+} = Astro.props;
+
+const site = Astro.site?.href?.replace(/\/$/, "") ?? "https://www.agustin.top";
+const canonical = `${site}${getLocalizedPath(locale, canonicalPath)}`;
+const altLocale = locale === "es" ? "en" : "es";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      name: "Agustín Avellaneda",
+      url: site,
+      jobTitle: "AI-Powered Fullstack Developer & Project Manager",
+      sameAs: [
+        "https://github.com/nitdraig",
+        "https://www.linkedin.com/in/avellaneda-agustin/",
+      ],
+      email: "me@agustin.top",
+      image: `${site}/profile.webp`,
+      knowsAbout: SKILLS,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Catamarca",
+        addressCountry: "AR",
+      },
+    },
+    {
+      "@type": "WebSite",
+      name: "Agustín Avellaneda Portfolio",
+      url: site,
+      inLanguage: [locale, altLocale],
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es" href={`${site}${getLocalizedPath("es", canonicalPath)}`} />
+    <link rel="alternate" hreflang="en" href={`${site}${getLocalizedPath("en", canonicalPath)}`} />
+    <link rel="alternate" hreflang="x-default" href={`${site}${getLocalizedPath("es", canonicalPath)}`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1858" />
+    <meta property="og:image:height" content="922" />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:site_name" content="Agustín Avellaneda Portfolio" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <slot name="head" />
+  </head>
+  <body class="font-sans antialiased">
+    <Navbar locale={locale} />
+    <ParticleBackground />
+    <CmdPalette locale={locale} />
+
+    <slot />
+
+    <script>
+      import { initReveal } from "../scripts/reveal";
+      initReveal();
+    </script>
+  </body>
+</html>

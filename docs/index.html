@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agustín — AI × Product</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f7;
+    --bg-panel:#ffffff;
+    --bg-overlay:rgba(255,255,255,0.96);
+    --line:#dfe0e4;
+    --text:#111214;
+    --text-dim:#4b4d52;
+    --text-faint:#8e9096;
+    --accent:#3b82f6;
+    --accent-dim:#1d4ed8;
+    --accent-glow:rgba(59,130,246,0.16);
+    --text-inverse:#ffffff;
+    --vignette:rgba(0,0,0,0.10);
+    --shadow:rgba(0,0,0,0.12);
+    --overlay:rgba(0,0,0,0.35);
+    --veil:#f5f5f7;
+    --highlight:rgba(0,0,0,0.03);
+    --grain-opacity:0.05;
+    --radius:2px;
+    --mono:'IBM Plex Mono', monospace;
+    --grotesk:'Space Grotesk', sans-serif;
+    --sans:'Inter', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0a0a0b;
+      --bg-panel:#111214;
+      --bg-overlay:rgba(13,13,15,0.95);
+      --line:#232427;
+      --text:#eeeeec;
+      --text-dim:#9a9c9f;
+      --text-faint:#5e6063;
+      --accent:#3b82f6;
+      --accent-dim:#1e40af;
+      --accent-glow:rgba(59,130,246,0.22);
+      --text-inverse:#0a0a0b;
+      --vignette:rgba(0,0,0,0.55);
+      --shadow:rgba(0,0,0,0.55);
+      --overlay:rgba(6,6,7,0.7);
+      --veil:#000;
+      --highlight:rgba(255,255,255,0.04);
+      --grain-opacity:0.035;
+    }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  html.locked, html.locked body{ overflow:hidden; height:100%; overscroll-behavior:none; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #particle-bg{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+  section.narrative, footer{ position:relative; z-index:1; }
+  ::selection{background:var(--accent); color:var(--text-inverse);}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- ATMOSPHERE ---------- */
+  .scanlines{
+    position:fixed; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(128,128,128,0.05) 0px, rgba(128,128,128,0.05) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:39; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%, transparent 45%, var(--vignette) 100%);
+  }
+  .grain{
+    position:fixed; inset:0; z-index:41; pointer-events:none; opacity:var(--grain-opacity); mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .glow-accent{ box-shadow:0 0 0 1px rgba(59,130,246,0.4), 0 0 28px rgba(59,130,246,0.22); }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px;
+  }
+  .kbd{ position:relative; }
+  .kbd::after{
+    content:''; position:absolute; inset:-3px; border-radius:5px;
+    box-shadow:0 0 14px rgba(59,130,246,0.0); transition:box-shadow .3s;
+  }
+  .kbd:hover::after{ box-shadow:0 0 14px rgba(59,130,246,0.55); }
+  .logo{font-family:var(--grotesk); font-weight:600; font-size:15px; letter-spacing:0.02em;}
+  nav.links{display:flex; gap:28px; align-items:center; font-size:13px; font-family:var(--mono);}
+  nav.links a{opacity:0.75; transition:opacity .2s;}
+  nav.links a:hover{opacity:1;}
+  .nav-right{display:flex; gap:16px; align-items:center; font-size:13px; font-family:var(--mono); opacity:0.75;}
+  .kbd{
+    border:1px solid var(--text-faint); border-radius:3px;
+    padding:2px 6px; font-size:11px; font-family:var(--mono);
+  }
+  .hamburger{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:4px;
+    width:32px; height:32px; padding:0; background:none;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:var(--text); }
+  @media (max-width:720px){ nav.links{display:none;} .hamburger{display:flex;} }
+
+  /* ---------- HERO / EXPLORE STAGE ---------- */
+  #hero{
+    position:fixed; inset:0; height:100vh; z-index:20;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:0 32px;
+    overflow:hidden;
+    cursor:grab;
+    background:var(--bg);
+    transition:opacity 0.9s ease, transform 0.9s ease, filter 0.9s ease;
+  }
+  #hero:active{ cursor:grabbing; }
+  #hero.exited{
+    opacity:0; transform:scale(1.06); filter:blur(6px);
+    pointer-events:none;
+  }
+  #hero.inspect-mode .hero-inner,
+  #hero.inspect-mode .hero-controls,
+  #hero.inspect-mode .telemetry,
+  #hero.inspect-mode .skip-btn {
+    opacity:0; pointer-events:none; transform:translateY(10px);
+  }
+  #graph-canvas{
+    position:absolute; inset:0; width:100%; height:100%;
+    z-index:0;
+  }
+  .hero-inner{
+    position:relative; z-index:2; max-width:640px;
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .status-strip{
+    display:flex; gap:18px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-dim);
+    margin-bottom:28px; letter-spacing:0.02em;
+  }
+  .status-strip span{display:flex; align-items:center; gap:6px;}
+  .dot{width:5px; height:5px; border-radius:50%; background:var(--accent); display:inline-block; box-shadow:0 0 8px rgba(59,130,246,0.8);}
+  .dot.pulse{animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  .hero-name{
+    font-family:var(--grotesk); font-weight:500;
+    font-size:clamp(1.1rem, 2.2vw, 1.5rem);
+    color:var(--text-dim);
+    letter-spacing:0.02em;
+    margin-bottom:12px;
+    opacity:0;
+    animation:fade-in 0.8s ease forwards;
+    animation-delay:0.3s;
+  }
+  h1.headline{
+    font-family:var(--grotesk); font-weight:600;
+    font-size:clamp(2.6rem, 6.6vw, 4.6rem);
+    line-height:1.03; letter-spacing:-0.015em;
+    max-width:13ch;
+    overflow:hidden;
+  }
+  h1.headline .line{
+    display:block; overflow:hidden;
+  }
+  h1.headline .line span{
+    display:inline-block; transform:translateY(110%);
+    animation:reveal-up 0.9s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  h1.headline .line:nth-child(2) span{ animation-delay:0.08s; }
+  @keyframes reveal-up{ to{ transform:translateY(0); } }
+  p.sub{
+    margin-top:20px; font-size:15px; color:var(--text-dim);
+    max-width:38ch; line-height:1.55;
+    opacity:0; animation:fade-in 0.8s ease forwards; animation-delay:0.5s;
+  }
+  @keyframes fade-in{ to{ opacity:1; } }
+
+  .cmdbar{
+    margin-top:40px; position:relative; max-width:560px;
+  }
+  .cmdbar-shell{
+    display:flex; align-items:flex-start; gap:12px;
+    background:var(--bg-panel); backdrop-filter:blur(10px);
+    border:1px solid var(--line); border-radius:8px;
+    padding:15px 16px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .cmdbar-shell:focus-within{ border-color:var(--accent-dim); box-shadow:0 0 32px var(--accent-glow); }
+  .cmdbar-shell textarea{
+    flex:1; background:none; border:none; outline:none; resize:none;
+    color:var(--text); font-family:var(--sans); font-size:14.5px;
+    min-height:24px; max-height:200px; line-height:1.55;
+  }
+  .cmdbar-shell textarea::placeholder{ color:var(--text-faint); }
+  .cmdbar-icon{ color:var(--text-faint); font-family:var(--mono); font-size:13px; margin-top:3px; }
+  .cmdbar-send{
+    width:28px; height:28px; border-radius:6px;
+    background:var(--accent); color:var(--text-inverse);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; flex-shrink:0;
+    transition:transform .15s;
+    margin-top:2px;
+  }
+  .cmdbar-send:hover{ transform:scale(1.06); }
+
+  .cmdbar-modal{
+    position:fixed; inset:0; z-index:60;
+    background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px;
+    opacity:0; pointer-events:none;
+    transition:opacity .35s ease;
+  }
+  .cmdbar-modal.show{ opacity:1; pointer-events:all; }
+  .cmdbar-modal-shell{
+    width:min(760px,100%); max-height:80vh;
+    display:flex; flex-direction:column; gap:20px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:14px;
+    padding:36px;
+    box-shadow:0 30px 90px rgba(0,0,0,0.45);
+    transform:translateY(18px) scale(0.98);
+    transition:transform .35s cubic-bezier(.16,1,.3,1);
+  }
+  .cmdbar-modal.show .cmdbar-modal-shell{ transform:translateY(0) scale(1); }
+  .cmdbar-modal textarea{
+    width:100%; flex:1; min-height:260px; max-height:60vh; resize:none;
+    background:none; border:none; outline:none;
+    color:var(--text); font-family:var(--sans);
+    font-size:clamp(1.3rem,3.2vw,1.9rem);
+    line-height:1.5;
+  }
+  .cmdbar-modal textarea::placeholder{ color:var(--text-faint); }
+  .cmdbar-modal-hint{
+    font-family:var(--mono); font-size:12px; color:var(--text-faint);
+    display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .cmdbar-modal-hint b{ color:var(--text-dim); font-weight:500; }
+  .cmdbar-modal-close{
+    position:absolute; top:24px; right:24px;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:6px; padding:8px 14px;
+    transition:border-color .2s, color .2s;
+  }
+  .cmdbar-modal-close:hover{ border-color:var(--text-faint); color:var(--text); }
+  .cmdbar-modal-loading{
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:24px; padding:90px 20px; text-align:center;
+  }
+  .cmdbar-modal-shell.loading .cmdbar-modal-loading{ display:flex; }
+  .cmdbar-modal-shell.loading textarea,
+  .cmdbar-modal-shell.loading .cmdbar-modal-hint{ display:none; }
+  .cmdbar-modal-loading-text{
+    font-family:var(--grotesk); font-size:clamp(1.8rem,4vw,2.8rem);
+    font-weight:600; letter-spacing:0.04em; color:var(--text-dim);
+  }
+  @media (max-width:720px){
+    .cmdbar-modal{ padding:16px; }
+    .cmdbar-modal-shell{ padding:22px; }
+    .cmdbar-modal textarea{ min-height:180px; font-size:1.15rem; }
+    .cmdbar-modal-close{ top:16px; right:16px; }
+  }
+
+  .ai-readout{
+    margin-top:16px; font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    min-height:18px; display:flex; align-items:center; gap:12px;
+  }
+  .ai-thinking{
+    display:flex; align-items:center; gap:4px; height:16px;
+  }
+  .ai-thinking .bar{
+    width:4px; height:14px; background:var(--accent); border-radius:2px;
+    animation:thinking-bar 1.1s ease-in-out infinite;
+  }
+  .ai-thinking .bar:nth-child(2){ animation-delay:0.14s; }
+  .ai-thinking .bar:nth-child(3){ animation-delay:0.28s; }
+  @keyframes thinking-bar{
+    0%,80%,100%{ transform:scaleY(0.55); opacity:0.35; }
+    40%{ transform:scaleY(1); opacity:1; }
+  }
+  .ai-readout.hidden{ display:none; }
+
+  .result-panel{
+    margin-top:22px; max-width:560px;
+    border:1px solid var(--line); border-radius:8px;
+    background:var(--bg-panel); backdrop-filter:blur(10px);
+    padding:20px; display:none;
+  }
+  .result-panel.show{ display:block; }
+  .result-label{ font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; margin-bottom:12px; }
+  .result-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .result-chips span{
+    font-family:var(--mono); font-size:12px; border:1px solid var(--line);
+    padding:5px 10px; border-radius:20px; color:var(--text-dim);
+  }
+  .result-projects{ display:flex; flex-direction:column; gap:8px; }
+  .result-projects a{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13.5px; padding:9px 0; border-bottom:1px solid var(--line);
+    color:var(--text-dim); transition:color .15s;
+  }
+  .result-projects a:last-child{ border-bottom:none; }
+  .result-projects a:hover{ color:var(--text); }
+  .result-note{ margin-top:12px; font-size:12px; color:var(--text-faint); line-height:1.5; }
+  .result-section-title{ font-family:var(--mono); font-size:10px; color:var(--text-faint); letter-spacing:0.04em; margin:16px 0 8px; text-transform:uppercase; }
+  .result-section-title:first-child{ margin-top:0; }
+  .result-you-said{ font-size:13px; color:var(--text-dim); line-height:1.5; }
+  .reveal-item{ opacity:0; transform:translateY(8px); animation:fade-up .45s ease forwards; }
+  @keyframes fade-up{ to{ opacity:1; transform:translateY(0); } }
+
+  #result-stage{
+    position:fixed; inset:0; z-index:55;
+    background:var(--bg);
+    overflow-y:auto;
+    opacity:0; pointer-events:none;
+    transition:opacity .4s ease;
+  }
+  #result-stage.show{ opacity:1; pointer-events:all; }
+  #result-stage .stage-back{
+    position:fixed; top:24px; left:32px; z-index:56;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:6px; padding:10px 16px;
+    background:var(--bg-panel); backdrop-filter:blur(10px);
+    transition:border-color .2s, color .2s;
+  }
+  #result-stage .stage-back:hover{ border-color:var(--text-faint); color:var(--text); }
+  #result-stage .stage-content{
+    max-width:760px; margin:0 auto; padding:120px 32px;
+  }
+  #result-stage .stage-label{ font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:12px; }
+  #result-stage .stage-title{ font-family:var(--grotesk); font-size:clamp(2rem,5vw,3rem); font-weight:600; line-height:1.1; letter-spacing:-0.015em; margin-bottom:64px; }
+  #result-stage .stage-section{ margin-bottom:48px; }
+  #result-stage .stage-section-title{ font-family:var(--mono); font-size:10px; color:var(--text-faint); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:14px; }
+  #result-stage .stage-text{ font-size:15px; color:var(--text-dim); line-height:1.65; }
+  #result-stage .stage-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  #result-stage .stage-chips span{ font-family:var(--mono); font-size:12px; border:1px solid var(--line); padding:6px 12px; border-radius:20px; color:var(--text-dim); }
+  #result-stage .stage-cards{ display:flex; flex-direction:column; gap:12px; }
+  #result-stage .stage-card{ display:block; background:var(--bg-panel); border:1px solid var(--line); border-radius:8px; padding:18px; transition:border-color .2s, transform .15s; }
+  #result-stage .stage-card:hover{ border-color:var(--accent-dim); transform:translateY(-1px); }
+  #result-stage .stage-card-head{ display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:6px; }
+  #result-stage .stage-card-title{ font-family:var(--grotesk); font-size:16px; font-weight:600; }
+  #result-stage .stage-card-meta{ font-family:var(--mono); font-size:11px; color:var(--accent); text-transform:uppercase; }
+  #result-stage .stage-card-view{ font-family:var(--mono); font-size:11px; color:var(--text-faint); transition:color .2s; }
+  #result-stage .stage-card:hover .stage-card-view{ color:var(--accent); }
+  #result-stage .stage-list{ list-style:none; display:flex; flex-direction:column; gap:12px; }
+  #result-stage .stage-list li{ font-size:14px; color:var(--text-dim); padding-left:20px; position:relative; line-height:1.55; }
+  #result-stage .stage-list li::before{ content:'→'; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-size:11px; }
+  #result-stage .stage-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:64px; }
+  @media (max-width:720px){
+    #result-stage .stage-back{ top:16px; left:16px; }
+    #result-stage .stage-content{ padding:96px 22px 80px; }
+    #result-stage .stage-actions{ margin-top:48px; }
+  }
+  #result-stage{ display:none !important; }
+
+  .telemetry{
+    position:absolute; bottom:28px; right:32px; z-index:2;
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    text-align:right; display:flex; flex-direction:column; gap:4px;
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .telemetry .row{ display:flex; justify-content:flex-end; gap:10px; }
+  .telemetry .v{ color:var(--text-dim); min-width:52px; display:inline-block; text-align:left; }
+  @media (max-width:720px){ .telemetry{ display:none; } }
+
+  .hero-controls{
+    position:absolute; bottom:28px; left:32px; z-index:2;
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    line-height:1.8; letter-spacing:0.02em;
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .hero-controls b{ color:var(--text-dim); font-weight:400; }
+  @media (max-width:720px){ .hero-controls{ display:none; } }
+
+  .skip-btn{
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:3;
+    font-family:var(--mono); font-size:12px; color:var(--text);
+    border:1px solid var(--line); border-radius:24px; padding:10px 20px;
+    background:var(--bg-panel); backdrop-filter:blur(10px);
+    transition:border-color .2s, transform .2s, opacity .5s;
+  }
+  .skip-btn:hover{ border-color:var(--accent-dim); transform:translateX(-50%) scale(1.04); }
+  @media (max-width:720px){ .skip-btn{ bottom:20px; font-size:11px; padding:9px 16px; } }
+
+  .node-tooltip{
+    position:absolute; z-index:4; max-width:240px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-dim);
+    background:var(--bg-panel); backdrop-filter:blur(10px);
+    border:1px solid var(--accent-dim); border-radius:6px; padding:10px 12px;
+    opacity:0; transform:translate(-50%, -12px); pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    line-height:1.5;
+  }
+  .node-tooltip.show{ opacity:1; transform:translate(-50%, -20px); }
+  .node-tooltip .nt-title{ color:var(--accent); font-weight:500; display:block; margin-bottom:4px; letter-spacing:0.03em; }
+  .node-tooltip .nt-tag{ display:block; font-size:10px; color:var(--accent); margin-bottom:6px; letter-spacing:0.04em; text-transform:uppercase; }
+  .node-tooltip .nt-preview{ display:block; color:var(--text-faint); font-size:11px; line-height:1.45; }
+
+  /* ---------- NODE INSPECT PANEL ---------- */
+  .node-panel{
+    position:absolute; top:50%; right:32px; transform:translateY(-50%) translateX(30px);
+    width:min(460px, calc(100vw - 64px));
+    max-height:calc(100vh - 120px);
+    overflow-y:auto;
+    z-index:10;
+    background:var(--bg-overlay);
+    backdrop-filter:blur(18px);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:26px;
+    opacity:0; pointer-events:none;
+    transition:opacity .45s ease, transform .45s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 24px 70px var(--shadow), inset 0 1px 0 var(--highlight);
+  }
+  .node-panel.show{
+    opacity:1; pointer-events:all; transform:translateY(-50%) translateX(0);
+  }
+  .node-panel::-webkit-scrollbar{ width:6px; }
+  .node-panel::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+
+  .node-panel-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+  .node-panel-title{
+    font-family:var(--grotesk); font-size:clamp(1.6rem, 4vw, 2rem); font-weight:600; letter-spacing:-0.01em;
+  }
+  .node-panel-tag{
+    font-family:var(--mono); font-size:10px; color:var(--accent);
+    border:1px solid var(--accent-dim); border-radius:20px; padding:4px 10px;
+    text-transform:uppercase;
+  }
+  .node-panel-desc{
+    font-size:14px; color:var(--text-dim); line-height:1.6; margin-bottom:18px;
+  }
+  .node-panel-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+  .node-panel-chips span{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border:1px solid var(--line); border-radius:20px; padding:5px 11px;
+  }
+
+  .node-content{ margin-bottom:22px; }
+  .node-content h3{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:0.04em; margin-bottom:12px; text-transform:uppercase;
+  }
+  .node-content-list{ list-style:none; display:flex; flex-direction:column; gap:12px; }
+  .node-content-list li{
+    font-size:13px; color:var(--text-dim); line-height:1.55; padding-left:18px; position:relative;
+  }
+  .node-content-list li::before{
+    content:'→'; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-size:11px;
+  }
+  .node-content-list li strong{ color:var(--text); font-weight:500; }
+
+  .node-filter{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .node-filter button{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:20px; padding:5px 12px;
+    transition:border-color .2s, color .2s, background .2s;
+  }
+  .node-filter button:hover, .node-filter button.active{ color:var(--text); border-color:var(--accent-dim); background:rgba(59,130,246,0.08); }
+
+  .node-grid{ display:grid; gap:10px; }
+  .node-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:8px;
+    padding:14px; transition:border-color .2s, transform .15s;
+  }
+  .node-card:hover{ border-color:var(--accent-dim); transform:translateY(-1px); }
+  .node-card-title{
+    font-family:var(--grotesk); font-size:15px; font-weight:600; margin-bottom:4px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .node-card-meta{ font-family:var(--mono); font-size:10px; color:var(--accent); margin-bottom:8px; }
+  .node-card-desc{ font-size:12.5px; color:var(--text-dim); line-height:1.5; }
+  .node-card-links{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .node-card-links a{
+    font-family:var(--mono); font-size:10px; color:var(--text-faint);
+    border-bottom:1px solid transparent; transition:color .2s, border-color .2s;
+  }
+  .node-card-links a:hover{ color:var(--text); border-color:var(--text-faint); }
+
+  .node-testimonials{ display:flex; flex-direction:column; gap:12px; }
+  .node-testimonial{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:8px; padding:16px;
+  }
+  .node-testimonial q{
+    display:block; font-size:13.5px; color:var(--text-dim); line-height:1.6; font-style:italic; margin-bottom:12px;
+  }
+  .node-testimonial cite{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); font-style:normal;
+  }
+  .node-testimonial cite strong{ color:var(--text); }
+
+  .node-timeline{ display:flex; flex-direction:column; gap:12px; position:relative; padding-left:18px; }
+  .node-timeline::before{
+    content:''; position:absolute; left:4px; top:6px; bottom:6px; width:1px; background:var(--line);
+  }
+  .node-timeline-item{ position:relative; }
+  .node-timeline-item::before{
+    content:''; position:absolute; left:-18px; top:5px; width:9px; height:9px; border-radius:50%;
+    background:var(--bg-panel); border:2px solid var(--accent);
+  }
+  .node-timeline-date{ font-family:var(--mono); font-size:10px; color:var(--accent); margin-bottom:2px; }
+  .node-timeline-role{ font-family:var(--grotesk); font-size:14px; font-weight:600; }
+  .node-timeline-company{ font-size:12px; color:var(--text-dim); }
+
+  .back-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    padding:8px 0; margin-bottom:14px;
+    transition:color .2s;
+  }
+  .back-btn:hover{ color:var(--text); }
+
+  .node-actions{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .btn-primary{
+    background:var(--accent); color:var(--text-inverse); font-family:var(--mono); font-size:12px; font-weight:500;
+    padding:10px 18px; border-radius:6px; transition:transform .15s, box-shadow .2s;
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(59,130,246,0.25); }
+  .btn-secondary{
+    background:transparent; color:var(--text-dim); border:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; padding:10px 18px; border-radius:6px;
+    transition:border-color .2s, color .2s;
+  }
+  .btn-secondary:hover{ border-color:var(--text-faint); color:var(--text); }
+
+  .node-idea-view{ display:none; }
+  .node-idea-view.show{ display:block; animation:fade-in .35s ease; }
+  .node-idea-form{ margin-top:4px; }
+  .node-idea-form .hint{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:10px; line-height:1.5;
+  }
+  .node-idea-form textarea{
+    width:100%; min-height:84px; resize:vertical;
+    background:rgba(17,18,20,0.7); border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px; color:var(--text); font-family:var(--sans); font-size:14px;
+    outline:none; line-height:1.5;
+  }
+  .node-idea-form textarea:focus{ border-color:var(--accent-dim); box-shadow:0 0 24px rgba(59,130,246,0.1); }
+  .node-idea-form textarea::placeholder{ color:var(--text-faint); }
+  .node-idea-actions{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+
+  .ai-result{
+    margin-top:22px; padding-top:22px; border-top:1px solid var(--line);
+    display:none;
+  }
+  .ai-result.show{ display:block; animation:fade-in .4s ease; }
+  .ai-result-label{
+    font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; margin-bottom:12px;
+  }
+  .ai-result-pitch{
+    font-family:var(--grotesk); font-size:17px; font-weight:600; line-height:1.35; margin-bottom:16px;
+  }
+  .ai-result-section{ margin-bottom:16px; }
+  .ai-result-section h4{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:8px; letter-spacing:0.03em;
+  }
+  .ai-result-list{ list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .ai-result-list li{
+    font-size:13px; color:var(--text-dim); padding-left:16px; position:relative; line-height:1.5;
+  }
+  .ai-result-list li::before{
+    content:'→'; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-size:11px;
+  }
+  .ai-result-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ai-result-chips span{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:20px; padding:4px 10px;
+  }
+  .ai-result-actions{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+  .focus-ring{
+    position:absolute; inset:0; z-index:3; pointer-events:none;
+    border:1px solid rgba(59,130,246,0.0); border-radius:0;
+    transition:border-color .4s ease;
+  }
+  .focus-ring.active{ border-color:rgba(59,130,246,0.35); }
+
+  @media (max-width:900px){
+    .node-panel{ right:16px; left:16px; top:auto; bottom:20px; transform:translateY(20px); width:auto; max-height:60vh; }
+    .node-panel.show{ transform:translateY(0); }
+  }
+
+  .transition-veil{
+    position:fixed; inset:0; z-index:200; background:var(--veil);
+    opacity:0; pointer-events:none; transition:opacity .5s ease;
+  }
+  .transition-veil.show{ opacity:1; pointer-events:all; }
+
+  /* ---------- SECTIONS ---------- */
+  section.narrative{
+    padding:120px 32px; max-width:1080px; margin:0 auto;
+    border-top:1px solid var(--line);
+  }
+  .sect-head{
+    display:flex; gap:20px; align-items:baseline; margin-bottom:48px;
+  }
+  .sect-num{ font-family:var(--mono); color:var(--accent); font-size:13px; }
+  h2.sect-title{
+    font-family:var(--grotesk); font-weight:600; font-size:clamp(1.5rem,3vw,2.1rem);
+  }
+  .sect-sub{ color:var(--text-dim); font-size:15px; max-width:52ch; margin-top:14px; line-height:1.6; }
+
+  /* 02 understand */
+  .flow-mini{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--mono); font-size:12.5px; color:var(--text-dim); margin-top:28px; }
+  .flow-mini .node{ border:1px solid var(--line); padding:7px 12px; border-radius:20px; }
+  .flow-mini .arrow{ color:var(--text-faint); }
+
+  /* 03 build */
+  .pipeline{
+    display:flex; gap:0; margin-top:40px; overflow-x:auto; padding-bottom:8px;
+  }
+  .pipeline .stage{
+    flex:1; min-width:150px; padding:20px 18px 20px 0; position:relative;
+  }
+  .pipeline .stage::after{
+    content:''; position:absolute; top:24px; right:0; width:100%; height:1px; background:var(--line);
+  }
+  .pipeline .stage:last-child::after{ display:none; }
+  .pipeline .stage .n{ font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:10px; }
+  .pipeline .stage .t{ font-family:var(--grotesk); font-size:16px; font-weight:600; }
+  .pipeline .stage .d{ font-size:12.5px; color:var(--text-dim); margin-top:6px; line-height:1.5; }
+
+  /* 04 proof / graph */
+  .graph-wrap{
+    margin-top:40px; border:1px solid var(--line); border-radius:8px;
+    padding:40px 24px; position:relative; min-height:420px;
+    background:radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 60%);
+  }
+  svg.pgraph{ width:100%; height:380px; display:block; }
+  .pgraph .link{ stroke:var(--line); stroke-width:1; }
+  .pgraph .cat text{ font-family:var(--mono); font-size:11px; fill:var(--text-dim); }
+  .pgraph .cat circle{ fill:var(--bg-panel); stroke:var(--text-faint); stroke-width:1; }
+  .pgraph .proj circle{ fill:var(--accent); cursor:pointer; transition:r .15s; }
+  .pgraph .proj circle:hover{ r:6; }
+  .pgraph .proj text{ font-family:var(--sans); font-size:11px; fill:var(--text-dim); cursor:pointer; }
+  .pgraph .center circle{ fill:var(--accent); }
+  .pgraph .center text{ font-family:var(--grotesk); font-size:13px; fill:var(--text); font-weight:600; }
+
+  .proj-detail{
+    margin-top:20px; border-top:1px solid var(--line); padding-top:18px; display:none;
+  }
+  .proj-detail.show{ display:block; }
+  .proj-detail .pt{ font-family:var(--grotesk); font-size:17px; font-weight:600; }
+  .proj-detail .pm{ font-family:var(--mono); font-size:11.5px; color:var(--accent); margin:6px 0 10px; }
+  .proj-detail .pd{ font-size:13.5px; color:var(--text-dim); line-height:1.6; max-width:60ch; }
+  .proj-note{ margin-top:14px; font-size:11.5px; color:var(--text-faint); }
+
+  /* 05 work */
+  .pillars{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1px; margin-top:40px; background:var(--line); border:1px solid var(--line); }
+  .pillar{ background:var(--bg); padding:26px 22px; }
+  .pillar .pt{ font-family:var(--grotesk); font-size:16px; font-weight:600; }
+  .pillar .pd{ font-size:12.5px; color:var(--text-dim); margin-top:8px; line-height:1.55; }
+
+  /* 06 connect */
+  #connect{ padding-bottom:100px; }
+  .connect-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:40px; flex-wrap:wrap; margin-top:16px; }
+  .connect-cta{ font-family:var(--grotesk); font-size:clamp(1.8rem,4vw,2.8rem); font-weight:600; max-width:14ch; line-height:1.1; }
+  .connect-links{ display:flex; flex-direction:column; gap:10px; font-family:var(--mono); font-size:13px; }
+  .connect-links a{ color:var(--text-dim); border-bottom:1px solid transparent; }
+  .connect-links a:hover{ color:var(--text); border-color:var(--text-faint); }
+
+  footer{ padding:24px 32px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+
+  /* ---------- COMMAND PALETTE ---------- */
+  #cmdk-overlay{
+    position:fixed; inset:0; background:var(--overlay); backdrop-filter:blur(4px);
+    z-index:100; display:none; align-items:flex-start; justify-content:center; padding-top:14vh;
+  }
+  #cmdk-overlay.show{ display:flex; }
+  #cmdk-box{
+    width:min(560px, 90vw); background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    overflow:hidden; box-shadow:0 30px 80px var(--shadow);
+  }
+  #cmdk-input{
+    width:100%; padding:18px 20px; background:none; border:none; outline:none;
+    color:var(--text); font-family:var(--sans); font-size:15px; border-bottom:1px solid var(--line);
+  }
+  #cmdk-input::placeholder{ color:var(--text-faint); }
+  .cmdk-list{ max-height:320px; overflow-y:auto; }
+  .cmdk-item{
+    padding:13px 20px; font-size:13.5px; color:var(--text-dim);
+    display:flex; justify-content:space-between; cursor:pointer;
+  }
+  .cmdk-item:hover, .cmdk-item.active{ background:color-mix(in srgb, var(--accent) 8%, transparent); color:var(--text); }
+  .cmdk-item .tag{ font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+
+  /* ---------- MOBILE MENU ---------- */
+  .mobile-menu{
+    position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column;
+    padding:22px 32px; opacity:0; transition:opacity .3s ease;
+  }
+  .mobile-menu.show{ display:flex; opacity:1; }
+  .mobile-close{ align-self:flex-end; font-size:32px; color:var(--text); line-height:1; padding:4px; }
+  .mobile-links{ display:flex; flex-direction:column; gap:18px; margin-top:48px; font-family:var(--grotesk); font-size:clamp(1.8rem,6vw,2.6rem); font-weight:600; }
+  .mobile-links a{ opacity:0.85; transition:opacity .2s; }
+  .mobile-links a:hover{ opacity:1; }
+
+  /* ---------- ONBOARDING HINT ---------- */
+  .onboarding-hint{
+    position:absolute; bottom:78px; left:32px; z-index:3;
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:6px;
+    padding:10px 14px; opacity:0; transform:translateY(8px);
+    animation:fade-up .6s ease .8s forwards; pointer-events:none; max-width:280px; line-height:1.5;
+  }
+  .onboarding-hint.dismissed{ opacity:0; transform:translateY(8px); animation:none; transition:opacity .3s, transform .3s; }
+  @media (max-width:720px){ .onboarding-hint{ left:16px; bottom:68px; font-size:10px; max-width:220px; } }
+
+  /* ---------- EXIT SCROLL PROGRESS ---------- */
+  .exit-progress{
+    position:absolute; top:0; left:0; height:2px; background:var(--accent);
+    width:0%; z-index:5; opacity:0; transition:opacity .2s; pointer-events:none;
+  }
+  .exit-progress.show{ opacity:1; }
+
+  /* ---------- NODE DOTS INDICATOR ---------- */
+  .node-dots{
+    position:absolute; right:18px; top:50%; transform:translateY(-50%); z-index:12;
+    display:flex; flex-direction:column; gap:10px; align-items:center;
+  }
+  .node-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--line);
+    cursor:pointer; transition:background .2s, transform .2s; padding:0; border:none;
+  }
+  .node-dot.active{ background:var(--accent); transform:scale(1.25); }
+  @media (max-width:720px){ .node-dots{ right:12px; gap:8px; } }
+
+  /* ---------- AI RESULT CONFIDENCE LABELS ---------- */
+  .ai-result-section-title{
+    font-family:var(--mono); font-size:10px; color:var(--text-faint); letter-spacing:0.04em;
+    margin:18px 0 8px; text-transform:uppercase;
+  }
+  .ai-result-pitch.typing::after{ content:'|'; animation:blink 1s step-end infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">agustin.top</div>
+  <nav class="links">
+    <a href="index.html#proof" data-nav>WORK</a>
+    <a href="index.html#understand" data-nav>AI</a>
+    <a href="about.html" data-nav>ABOUT</a>
+  </nav>
+  <div class="nav-right">
+    <span>EN</span>
+    <button id="menu-btn" class="kbd">⌘K</button>
+    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<div class="mobile-menu" id="mobile-menu">
+  <button class="mobile-close" id="mobile-close" aria-label="Close menu">×</button>
+  <nav class="mobile-links">
+    <a href="index.html#proof" data-nav>WORK</a>
+    <a href="index.html#understand" data-nav>AI</a>
+    <a href="about.html" data-nav>ABOUT</a>
+  </nav>
+</div>
+
+<section id="hero">
+  <canvas id="graph-canvas"></canvas>
+  <div class="focus-ring" id="focus-ring"></div>
+  <div class="hero-inner">
+    <div class="status-strip">
+      <span><i class="dot pulse"></i> AI READY</span>
+      <span>20+ PROJECTS</span>
+      <span>AI × PRODUCT</span>
+      <span>FULLSTACK</span>
+    </div>
+    <div class="hero-name">Agustín Avellaneda</div>
+    <h1 class="headline">
+      <span class="line"><span>I turn ideas</span></span>
+      <span class="line"><span>into digital products.</span></span>
+    </h1>
+    <p class="sub">AI-Powered Fullstack Developer &amp; PM</p>
+
+    <form class="cmdbar" id="cmd-form">
+      <div class="cmdbar-shell" id="cmdbar-shell">
+        <span class="cmdbar-icon">&gt;</span>
+        <textarea id="cmd-input" placeholder="Tell me what you want to build..." rows="1" autocomplete="off"></textarea>
+        <button type="submit" class="cmdbar-send glow-accent" aria-label="Send">↵</button>
+      </div>
+    </form>
+
+    <div class="cmdbar-modal" id="cmdbar-modal" aria-hidden="true">
+      <button class="cmdbar-modal-close" id="cmdbar-modal-close" type="button">Close</button>
+      <div class="cmdbar-modal-shell" id="cmdbar-modal-shell">
+        <textarea id="cmd-modal-input" placeholder="Tell me what you want to build..." autocomplete="off"></textarea>
+        <div class="cmdbar-modal-hint">
+          <span>Press <b>Enter</b> to analyze · <b>Shift + Enter</b> for new line · <b>Esc</b> to go back</span>
+          <button type="button" class="btn-primary" id="cmdbar-modal-send">Analyze idea</button>
+        </div>
+        <div class="cmdbar-modal-loading" id="cmdbar-modal-loading" aria-hidden="true">
+          <div class="ai-thinking" aria-hidden="true">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          </div>
+          <div class="cmdbar-modal-loading-text">THINKING...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-readout hidden" id="ai-readout">
+      <div class="ai-thinking" aria-hidden="true">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <span id="ai-readout-text">THINKING...</span>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-label" id="result-label">ANALYSIS COMPLETE</div>
+      <div class="result-chips" id="result-chips"></div>
+      <div class="result-projects" id="result-projects"></div>
+      <div class="result-note">Ejemplo ilustrativo — reemplazar con datos reales del portfolio de Agustín.</div>
+    </div>
+
+    <div id="result-stage" aria-hidden="true">
+      <button class="stage-back" id="result-stage-back" type="button">← Back to orbit</button>
+      <div class="stage-content">
+        <div class="stage-label">IDEA ANALYSIS</div>
+        <h2 class="stage-title" id="result-stage-title"></h2>
+        <div class="stage-section">
+          <div class="stage-section-title">You said</div>
+          <div class="stage-text" id="result-stage-you-said"></div>
+        </div>
+        <div class="stage-section">
+          <div class="stage-section-title">Inferred components</div>
+          <div class="stage-chips" id="result-stage-chips"></div>
+        </div>
+        <div class="stage-section">
+          <div class="stage-section-title">Similar projects</div>
+          <div class="stage-cards" id="result-stage-projects"></div>
+        </div>
+        <div class="stage-section">
+          <div class="stage-section-title">MVP proposal</div>
+          <ul class="stage-list" id="result-stage-mvp"></ul>
+        </div>
+        <div class="stage-section">
+          <div class="stage-section-title">Next steps</div>
+          <ul class="stage-list" id="result-stage-steps"></ul>
+        </div>
+        <div class="stage-actions">
+          <a class="btn-primary" id="result-stage-build" href="mailto:hola@agustin.top">Build this MVP</a>
+          <button class="btn-secondary" id="result-stage-new" type="button">New idea</button>
+          <button class="btn-secondary" id="result-stage-back-bottom" type="button">Back to orbit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="node-panel" id="node-panel" aria-hidden="true">
+    <button class="back-btn" id="back-to-orbit" aria-label="Back to orbit">← Back to orbit</button>
+    <div class="node-panel-header">
+      <h2 class="node-panel-title" id="np-title">AI</h2>
+      <span class="node-panel-tag" id="np-tag">CAPABILITY</span>
+    </div>
+    <p class="node-panel-desc" id="np-desc"></p>
+    <div class="node-panel-chips" id="np-chips"></div>
+
+    <div class="node-content" id="np-content"></div>
+
+    <div class="node-actions" id="np-actions">
+      <button class="btn-primary" id="np-analyze" type="button">Analyze idea</button>
+      <button class="btn-secondary" id="np-projects" type="button">View projects</button>
+      <button class="btn-secondary" id="np-contact" type="button">Contact</button>
+    </div>
+
+    <div class="node-idea-view" id="node-idea-view">
+      <div class="node-idea-form" id="node-idea-form">
+        <p class="hint" id="np-hint">Describe your idea. I will reshape it through this lens.</p>
+        <textarea id="node-idea-input" placeholder="Tell me what you want to build..." rows="3"></textarea>
+        <div class="node-idea-actions">
+          <button class="btn-primary" id="node-idea-submit" type="button">Analyze idea</button>
+          <button class="btn-secondary" id="node-idea-back" type="button">Back</button>
+        </div>
+      </div>
+
+      <div class="ai-result" id="ai-result">
+        <div class="ai-result-label">POLISHED IDEA</div>
+        <div class="ai-result-section-title">Recommended pitch</div>
+        <div class="ai-result-pitch" id="ai-result-pitch"></div>
+        <div class="ai-result-section">
+          <h4>Inferred components</h4>
+          <div class="ai-result-chips" id="ai-result-chips"></div>
+        </div>
+        <div class="ai-result-section">
+          <h4>Recommended next steps</h4>
+          <ul class="ai-result-list" id="ai-result-steps"></ul>
+        </div>
+        <div class="ai-result-actions">
+          <a class="btn-primary" id="ai-send-link" href="#">Send to Agustín</a>
+          <button class="btn-secondary" id="ai-new-idea" type="button">New idea</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="hero-controls">
+    <b>ARRASTRÁ</b> para orbitar · <b>SCROLL</b> para alejarte<br>
+    <b>W A S D</b> para explorar · tocá un nodo para inspeccionarlo
+  </div>
+  <div class="exit-progress" id="exit-progress"></div>
+  <button class="skip-btn glow-accent" id="skip-btn">Skip to portfolio →</button>
+  <div class="onboarding-hint" id="onboarding-hint">Drag to orbit · Scroll back to explore · Click a node to inspect</div>
+  <div class="node-tooltip" id="node-tooltip"><span class="nt-title" id="nt-title"></span><span class="nt-tag" id="nt-tag"></span><span class="nt-preview" id="nt-preview"></span></div>
+  <div class="node-dots" id="node-dots"></div>
+  <div class="telemetry" id="telemetry">
+    <div class="row">NODES <span class="v" id="tm-nodes">152</span></div>
+    <div class="row">SYNC <span class="v" id="tm-sync">100%</span></div>
+    <div class="row">LATENCY <span class="v" id="tm-latency">18ms</span></div>
+  </div>
+</section>
+
+<canvas id="particle-bg"></canvas>
+<div class="transition-veil" id="transition-veil"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="grain"></div>
+
+<section class="narrative" id="understand">
+  <div class="sect-head">
+    <span class="sect-num">01 / 02</span>
+    <h2 class="sect-title">La IA descompone la idea</h2>
+  </div>
+  <p class="sect-sub">Cada idea que entra por la barra de comandos se traduce en los componentes reales que haría falta construir — no en un pitch genérico. El sistema identifica usuarios, flujos, datos y superficie de producto antes de sugerir nada.</p>
+  <div class="flow-mini">
+    <span class="node">IDEA</span><span class="arrow">→</span>
+    <span class="node">THINK</span><span class="arrow">→</span>
+    <span class="node">MVP</span><span class="arrow">→</span>
+    <span class="node">PRODUCT</span><span class="arrow">→</span>
+    <span class="node">LAUNCH</span>
+  </div>
+</section>
+
+<section class="narrative" id="build">
+  <div class="sect-head">
+    <span class="sect-num">02 / 02</span>
+    <h2 class="sect-title">Cómo se construye</h2>
+  </div>
+  <p class="sect-sub">El mismo proceso, cada vez: de la idea a algo que la gente puede usar.</p>
+  <div class="pipeline">
+    <div class="stage"><div class="n">01</div><div class="t">Idea</div><div class="d">Definir el problema real y a quién le duele.</div></div>
+    <div class="stage"><div class="n">02</div><div class="t">Validate</div><div class="d">Contrastar con usuarios y con lo que ya existe.</div></div>
+    <div class="stage"><div class="n">03</div><div class="t">Design</div><div class="d">Arquitectura de producto y decisiones de UX.</div></div>
+    <div class="stage"><div class="n">04</div><div class="t">Build</div><div class="d">Desarrollo fullstack, IA donde suma valor real.</div></div>
+    <div class="stage"><div class="n">05</div><div class="t">Launch</div><div class="d">Shippear, medir, iterar con datos reales.</div></div>
+  </div>
+</section>
+
+<section class="narrative" id="proof">
+  <div class="sect-head">
+    <span class="sect-num">PROOF</span>
+    <h2 class="sect-title">Explorar proyectos reales</h2>
+  </div>
+  <p class="sect-sub">Un mapa de lo construido, conectado por industria y tipo de producto. Tocá un nodo para ver el detalle.</p>
+  <div class="graph-wrap">
+    <svg class="pgraph" id="pgraph" viewBox="0 0 900 380"></svg>
+    <div class="proj-detail" id="proj-detail">
+      <div class="pt" id="pd-title"></div>
+      <div class="pm" id="pd-meta"></div>
+      <div class="pd" id="pd-desc"></div>
+    </div>
+    <div class="proj-note">Datos de ejemplo — reemplazar por el catálogo real de proyectos de Agustín.</div>
+  </div>
+</section>
+
+<section class="narrative" id="work">
+  <div class="sect-head">
+    <span class="sect-num">WORK</span>
+    <h2 class="sect-title">Dónde aporto</h2>
+  </div>
+  <div class="pillars">
+    <div class="pillar"><div class="pt">AI</div><div class="pd">Integración de modelos y agentes donde resuelven un problema concreto, no como feature decorativa.</div></div>
+    <div class="pillar"><div class="pt">Fullstack</div><div class="pd">De la base de datos a la interfaz, con foco en performance y mantenibilidad.</div></div>
+    <div class="pillar"><div class="pt">Product</div><div class="pd">Definición de alcance, priorización y trade-offs con visión de negocio.</div></div>
+    <div class="pillar"><div class="pt">PM</div><div class="pd">Ejecución end-to-end: de la idea al roadmap, sin perder velocidad.</div></div>
+  </div>
+</section>
+
+<section class="narrative" id="connect">
+  <div class="sect-head">
+    <span class="sect-num">CONNECT</span>
+    <h2 class="sect-title">Hablemos</h2>
+  </div>
+  <div class="connect-row">
+    <div class="connect-cta">Let's build it.</div>
+    <div class="connect-links">
+      <a href="mailto:hola@agustin.top">hola@agustin.top</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>agustin.top</span>
+  <span>© 2026</span>
+</footer>
+
+<div id="cmdk-overlay">
+  <div id="cmdk-box">
+    <input id="cmdk-input" type="text" placeholder="Escribí un comando...">
+    <div class="cmdk-list" id="cmdk-list"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+document.documentElement.classList.add('locked');
+
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============ DATA (placeholder — reemplazar con datos reales) ============ */
+const PROJECTS = [
+  {id:'p1', title:'Runmate', category:'Social', tags:['users','events','matching'], type:'Platform', desc:'App de matching para runners: perfiles, eventos y recomendaciones basadas en ritmo y ubicación.'},
+  {id:'p2', title:'Ledgerly', category:'Fintech', tags:['payments','dashboard','automation'], type:'SaaS', desc:'Panel de conciliación financiera automatizado para pymes, con reglas configurables.'},
+  {id:'p3', title:'Opsly', category:'Automation', tags:['workflows','integrations'], type:'Tool', desc:'Orquestador de tareas internas que conecta APIs sin código para equipos de operaciones.'},
+  {id:'p4', title:'Marketspace', category:'Platforms', tags:['marketplace','search'], type:'Platform', desc:'Marketplace vertical con búsqueda semántica y matching comprador-vendedor.'},
+  {id:'p5', title:'Cohort', category:'SaaS', tags:['analytics','retention'], type:'SaaS', desc:'Herramienta de analítica de producto enfocada en retención por cohortes.'},
+  {id:'p6', title:'Fieldnote', category:'Social', tags:['content','community'], type:'App', desc:'Red social de nicho para compartir notas de campo entre profesionales.'},
+];
+const CATEGORIES = ['SaaS','Fintech','Social','Automation','Platforms'];
+
+const IDEA_DICTIONARY = [
+  { match:/runn|carrera|marató/i, tags:['USERS','EVENTS','PROFILES','MATCHING','PLATFORM'] },
+  { match:/pago|fintech|banc|finan/i, tags:['USERS','PAYMENTS','LEDGER','COMPLIANCE','DASHBOARD'] },
+  { match:/marketplace|tienda|ecommerce|vender/i, tags:['USERS','LISTINGS','SEARCH','TRANSACTIONS','PLATFORM'] },
+  { match:/social|comunidad|red/i, tags:['USERS','CONTENT','FEED','INTERACTIONS','PLATFORM'] },
+  { match:/automat|workflow|integrac/i, tags:['TRIGGERS','RULES','INTEGRATIONS','ACTIONS','MONITORING'] },
+];
+const FALLBACK_TAGS = ['USERS','DATA','LOGIC','INTERFACE','PLATFORM'];
+
+function decomposeIdea(text){
+  const hit = IDEA_DICTIONARY.find(d => d.match.test(text));
+  return hit ? hit.tags : FALLBACK_TAGS;
+}
+function matchProjects(text, tags){
+  const lower = text.toLowerCase();
+  let matches = PROJECTS.filter(p =>
+    p.tags.some(t => lower.includes(t)) ||
+    tags.some(tag => p.tags.includes(tag.toLowerCase()))
+  );
+  if(matches.length === 0) matches = PROJECTS.slice(0,3);
+  return matches.slice(0,3);
+}
+
+/* ============ NODE DATA ============ */
+const CONCEPTS = ['AI','CODE','PROJECTS','MVP','RESOURCES','CLIENTS','ABOUT','REASONING','ENVIRONMENT','AI DEV'];
+
+const NODE_DATA = {
+  AI: {
+    tag: 'CAPABILITY',
+    desc: 'La IA no es un chat decorativo. Aplico modelos y agentes para acelerar decisiones, reducir tareas repetitivas y mejorar la calidad del producto.',
+    chips: ['LLMs', 'Agents', 'RAG', 'Automation'],
+    content: {
+      type: 'list',
+      title: 'How AI improves the process',
+      items: [
+        { title: 'Research acceleration', text: 'Sintetizo competidores, usuarios y patrones de producto en minutos, no días.' },
+        { title: 'Code generation', text: 'Uso IA para scaffolding, tests y refactors repetitivos, enfocándome en arquitectura.' },
+        { title: 'Automation', text: 'Agentes que ejecutan flujos internos: reportes, clasificación, respuestas y integraciones.' },
+        { title: 'Analytics', text: 'Interpretación de métricas y detección de anomalías para iterar con datos reales.' },
+      ]
+    },
+    actions: ['analyze']
+  },
+  CODE: {
+    tag: 'STACK',
+    desc: 'Desarrollo fullstack con TypeScript, React, Node.js y bases de datos modernas. También construyo herramientas open source que uso en producción.',
+    chips: ['TypeScript', 'Node.js', 'React', 'Open Source'],
+    content: {
+      type: 'tools',
+      title: 'Open source tools',
+      items: [
+        { name: 'lexis-kit', meta: 'CLI · TypeScript', desc: 'Scaffold de proyectos Lexis con reglas de agentes y plantillas.', links: [{label:'npm', url:'#'}, {label:'GitHub', url:'#'}] },
+        { name: 'use-async-state', meta: 'React hook', desc: 'Hook minimalista para estados asíncronos con cancelación.', links: [{label:'npm', url:'#'}, {label:'Docs', url:'#'}] },
+        { name: 'fast-redis-cache', meta: 'Node.js', desc: 'Wrapper tipado para caché con Redis y fallback graceful.', links: [{label:'npm', url:'#'}, {label:'GitHub', url:'#'}] },
+      ]
+    },
+    actions: ['analyze']
+  },
+  PROJECTS: {
+    tag: 'PORTFOLIO',
+    desc: '20+ productos shippeados. Cada proyecto aporta patrones que se reutilizan en el siguiente. Filtrá por lo que necesites.',
+    chips: ['SaaS', 'Fintech', 'Social', 'Automation'],
+    content: { type: 'projects' },
+    actions: ['analyze']
+  },
+  MVP: {
+    tag: 'PROCESS',
+    desc: 'Un MVP no es un producto roto. Es la versión mínima que permite aprender algo real de los usuarios sin gastar de más.',
+    chips: ['Lean', 'Validation', 'Ship', 'Iterate'],
+    content: {
+      type: 'list',
+      title: 'Why MVP first',
+      items: [
+        { title: 'Reduce risk', text: 'Validás la hipótesis clave antes de invertir meses en features no prioritarias.' },
+        { title: 'Speed to learn', text: 'En 2-4 semanas tenés usuarios reales dando feedback sobre algo tangible.' },
+        { title: 'Focus', text: 'Obliga a definir el loop de valor central y descartar lo demás.' },
+        { title: 'Iterate with data', text: 'Cada versión posterior se basa en comportamiento real, no en suposiciones.' },
+      ]
+    },
+    actions: ['analyze', 'contact']
+  },
+  RESOURCES: {
+    tag: 'LIBRARY',
+    desc: 'Libros, blogs y publicaciones que forman mi forma de pensar producto y tecnología.',
+    chips: ['Books', 'Blogs', 'Publications'],
+    content: {
+      type: 'resources',
+      title: 'Recommended reading',
+      items: [
+        { title: 'The Lean Startup', author: 'Eric Ries', type: 'Book', link: '#' },
+        { title: 'Shape Up', author: 'Basecamp', type: 'Book', link: '#' },
+        { title: 'A Minimum Viable Product Is Not a Product, It’s a Process', author: 'Jim Brikman', type: 'Article', link: '#' },
+        { title: 'Building Products for the Long Term', author: 'Agustín', type: 'Blog', link: '#' },
+      ]
+    },
+    actions: []
+  },
+  CLIENTS: {
+    tag: 'TESTIMONIALS',
+    desc: 'Opiniones de founders, equipos y asociados con los que trabajé en productos digitales.',
+    chips: ['Founders', 'Teams', 'Products'],
+    content: {
+      type: 'testimonials',
+      title: 'What people say',
+      items: [
+        { quote: 'Agustín transformó una idea vaga en un MVP funcional en tres semanas. Entiende producto y código al mismo nivel.', author: 'María López', role: 'Founder, Runmate' },
+        { quote: 'Su capacidad de cortar scope sin perder visión de negocio es rara. El equipo aprendió mucho trabajando con él.', author: 'Juan Pérez', role: 'CTO, Ledgerly' },
+        { quote: 'No solo entrega features; entrega claridad. Cada decisión técnica estaba alineada con el objetivo de negocio.', author: 'Ana Torres', role: 'Product Lead, Opsly' },
+      ]
+    },
+    actions: ['contact']
+  },
+  ABOUT: {
+    tag: 'BIO',
+    desc: 'Ingeniero y product builder. Diseño, construyo y shippeo productos digitales con foco en valor real para el usuario.',
+    chips: ['Experience', 'Background', 'Contact'],
+    content: {
+      type: 'timeline',
+      title: 'Experience',
+      items: [
+        { date: '2022 — Present', role: 'Independent Product Engineer', company: 'agustin.top' },
+        { date: '2019 — 2022', role: 'Senior Fullstack Engineer', company: 'SaaS Studio' },
+        { date: '2016 — 2019', role: 'Product Developer', company: 'Digital Agency' },
+        { date: '2012 — 2016', role: 'Software Engineering', company: 'University' },
+      ]
+    },
+    actions: ['contact']
+  },
+  REASONING: {
+    tag: 'MINDSET',
+    desc: 'Mi forma de trabajar se basa en claridad, iteración rápida y decisiones fundamentadas. Menos magia, más sistema.',
+    chips: ['First Principles', 'Simplicity', 'Measurement'],
+    content: {
+      type: 'list',
+      title: 'How I think as a dev',
+      items: [
+        { title: 'First principles', text: 'Desarmo el problema hasta sus partes irreducibles antes de elegir solución.' },
+        { title: 'Boring over clever', text: 'Prefiero código legible a las 3am sobre código que impresiona en una demo.' },
+        { title: 'Measure first', text: 'No optimizo por intuición. Agrego instrumentación antes de cambiar cualquier sistema.' },
+        { title: 'Ship to learn', text: 'El feedback real vale más que cualquier debate de arquitectura en una sala.' },
+      ]
+    },
+    actions: ['analyze']
+  },
+  ENVIRONMENT: {
+    tag: 'SCIENCE',
+    desc: 'Licenciado en Ciencias Ambientales. Aplico pensamiento sistémico y enfoque de sostenibilidad al diseño de productos digitales.',
+    chips: ['Sustainability', 'Systems thinking', 'JEMA', 'Impact'],
+    content: {
+      type: 'list',
+      title: 'Environmental lens',
+      items: [
+        { title: 'Systems thinking', text: 'Abordo los problemas como sistemas interconectados, no como síntomas aislados.' },
+        { title: 'Sustainability by design', text: 'Considero impacto ambiental y social en las decisiones de producto.' },
+        { title: 'JEMA', text: 'Agente de IA para transparencia ambiental en industrias extractivas.' },
+        { title: 'Data for impact', text: 'Uso datos y modelos para medir y reducir huellas de impacto.' },
+      ]
+    },
+    actions: ['analyze', 'contact']
+  },
+  'AI DEV': {
+    tag: 'AGENTS',
+    desc: 'Desarrollador de soluciones de inteligencia artificial. Construyo agentes, automatizaciones y tools que amplifican la capacidad de los equipos.',
+    chips: ['Lexis-Two', 'Agents', 'Automation', 'LLMs'],
+    content: {
+      type: 'list',
+      title: 'AI solutions',
+      items: [
+        { title: 'Lexis-Two', text: 'Ecosistema de agentes especializados para desarrollo de productos digitales.' },
+        { title: 'Custom agents', text: 'Agentes a medida para flujos de trabajo específicos del cliente.' },
+        { title: 'Automation', text: 'Automatización de tareas repetitivas con IA y reglas de negocio.' },
+        { title: 'AI integration', text: 'Integración de modelos en productos existentes sin perder control.' },
+      ]
+    },
+    actions: ['analyze', 'contact']
+  },
+};
+
+/* ============ AI COMMAND BAR (hero-level) ============ */
+const cmdForm = document.getElementById('cmd-form');
+const cmdInput = document.getElementById('cmd-input');
+const cmdbarShell = document.getElementById('cmdbar-shell');
+const cmdModal = document.getElementById('cmdbar-modal');
+const cmdModalInput = document.getElementById('cmd-modal-input');
+const cmdModalClose = document.getElementById('cmdbar-modal-close');
+const cmdModalSend = document.getElementById('cmdbar-modal-send');
+const readout = document.getElementById('ai-readout');
+const readoutText = document.getElementById('ai-readout-text');
+const resultPanel = document.getElementById('result-panel');
+const resultLabel = document.getElementById('result-label');
+const resultChips = document.getElementById('result-chips');
+const resultProjects = document.getElementById('result-projects');
+const resultStage = document.getElementById('result-stage');
+const resultStageTitle = document.getElementById('result-stage-title');
+const resultStageYouSaid = document.getElementById('result-stage-you-said');
+const resultStageChips = document.getElementById('result-stage-chips');
+const resultStageProjects = document.getElementById('result-stage-projects');
+const resultStageMvp = document.getElementById('result-stage-mvp');
+const resultStageSteps = document.getElementById('result-stage-steps');
+const resultStageBuild = document.getElementById('result-stage-build');
+const resultStageBack = document.getElementById('result-stage-back');
+const resultStageBackBottom = document.getElementById('result-stage-back-bottom');
+const resultStageNew = document.getElementById('result-stage-new');
+const cmdModalShell = document.getElementById('cmdbar-modal-shell');
+let analyzeTimeout = null;
+let analyzeNavTimeout = null;
+let isAnalyzing = false;
+
+function cancelAnalysis(){
+  if(analyzeTimeout){ clearTimeout(analyzeTimeout); analyzeTimeout = null; }
+  if(analyzeNavTimeout){ clearTimeout(analyzeNavTimeout); analyzeNavTimeout = null; }
+  isAnalyzing = false;
+  if(cmdModalShell) cmdModalShell.classList.remove('loading');
+  if(cmdModalInput) cmdModalInput.disabled = false;
+  if(cmdModalSend) cmdModalSend.disabled = false;
+  const veil = document.getElementById('transition-veil');
+  if(veil) veil.classList.remove('show');
+}
+
+function generateMvp(text, tags){
+  const lower = text.toLowerCase();
+  const bullets = [];
+  if(/app|mobile|ios|android/.test(lower)) bullets.push('A focused mobile app that lets users complete the core action in under 60 seconds.');
+  else if(/platform|marketplace|saas|b2b/.test(lower)) bullets.push('A web dashboard where each side of the marketplace can list, search, and manage its core objects.');
+  else bullets.push('A clean web interface that lets users perform the one action the idea promises.');
+
+  if(/user|profile|auth|login|sign up/.test(lower) || tags.includes('USERS')) bullets.push('Simple sign-up and profile setup so the system can personalize the experience from day one.');
+  else bullets.push('A lightweight data model that captures the inputs needed to deliver value.');
+
+  if(/payment|pay|subscription|buy|sell|transaction/.test(lower) || tags.includes('PAYMENTS') || tags.includes('TRANSACTIONS')) bullets.push('A basic payment or transaction flow with clear confirmation and history.');
+  else if(/search|find|match|filter/.test(lower) || tags.includes('SEARCH') || tags.includes('MATCHING')) bullets.push('Search and filtering so users can find the right match in a growing catalog.');
+  else if(/content|post|feed|community/.test(lower) || tags.includes('CONTENT')) bullets.push('Content creation and a simple feed so early users can see activity immediately.');
+  else bullets.push('The smallest automation or workflow that removes the manual step users would otherwise do.');
+
+  bullets.push('Analytics, feedback capture, and an admin view to learn what to build next.');
+  return bullets.slice(0,4);
+}
+
+function generateNextSteps(text, tags){
+  return [
+    'Define the primary user and the one job they hire this product to do.',
+    'Map the smallest end-to-end flow that delivers value in the first session.',
+    'Build the prototype, test it with 5 real users, and capture feedback.',
+    'Iterate on the highest-friction step before adding any new feature.'
+  ];
+}
+
+function openResultStage(text){
+  resultStage.classList.add('show');
+  resultStage.setAttribute('aria-hidden','false');
+  document.documentElement.classList.add('locked');
+
+  const tags = decomposeIdea(text);
+  const matches = matchProjects(text, tags);
+  const mvp = generateMvp(text, tags);
+  const steps = generateNextSteps(text, tags);
+
+  resultStageTitle.textContent = text;
+  resultStageYouSaid.textContent = text;
+  resultStageChips.innerHTML = tags.map((t,i) => `<span class="reveal-item" style="animation-delay:${80+i*40}ms">${escapeHtml(t)}</span>`).join('');
+  resultStageProjects.innerHTML = matches.map((p,i) => `
+    <a class="stage-card reveal-item" href="#proof" data-proj="${p.id}" style="animation-delay:${200+i*60}ms">
+      <div class="stage-card-head">
+        <span class="stage-card-title">${escapeHtml(p.title)}</span>
+        <span class="stage-card-view">View →</span>
+      </div>
+      <div class="stage-card-meta">${escapeHtml(p.category)} · ${escapeHtml(p.type)}</div>
+    </a>
+  `).join('');
+  if(matches.length === 0) resultStageProjects.innerHTML = `<div class="stage-text reveal-item">No direct matches in the portfolio yet — this idea is a fresh direction.</div>`;
+
+  resultStageMvp.innerHTML = mvp.map((item,i) => `<li class="reveal-item" style="animation-delay:${360+i*60}ms">${escapeHtml(item)}</li>`).join('');
+  resultStageSteps.innerHTML = steps.map((item,i) => `<li class="reveal-item" style="animation-delay:${560+i*60}ms">${escapeHtml(item)}</li>`).join('');
+
+  const subject = encodeURIComponent(`Idea: ${text.substring(0, 50)}`);
+  const body = encodeURIComponent(
+    `Hi Agustín,\n\nI have an idea I would like to build:\n\n"${text}"\n\n` +
+    `Inferred components: ${tags.join(', ')}\n\n` +
+    `MVP proposal:\n${mvp.map((s, i) => `${i+1}. ${s}`).join('\n')}\n\n` +
+    `Next steps:\n${steps.map((s, i) => `${i+1}. ${s}`).join('\n')}\n\n` +
+    `Let's talk.`
+  );
+  resultStageBuild.href = `mailto:hola@agustin.top?subject=${subject}&body=${body}`;
+
+  resultStageProjects.querySelectorAll('a[data-proj]').forEach(a => {
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      closeResultStage();
+      window.__enterPortfolio('#proof');
+      setTimeout(() => showProjectDetail(a.dataset.proj), 950);
+    });
+  });
+
+  resultStage.scrollTop = 0;
+}
+
+function closeResultStage(shouldClearInputs = false){
+  resultStage.classList.remove('show');
+  resultStage.setAttribute('aria-hidden','true');
+  if(window.__heroMode !== 'portfolio') document.documentElement.classList.remove('locked');
+  if(shouldClearInputs){
+    cmdInput.value = '';
+    cmdModalInput.value = '';
+  }
+}
+
+function openCmdbarModal(){
+  if(cmdModal.classList.contains('show')) return;
+  cmdModal.classList.add('show');
+  cmdModal.setAttribute('aria-hidden','false');
+  cmdModalInput.value = cmdInput.value;
+  document.documentElement.classList.add('locked');
+  requestAnimationFrame(() => cmdModalInput.focus());
+}
+
+function closeCmdbarModal(){
+  if(isAnalyzing) cancelAnalysis();
+  cmdModal.classList.remove('show');
+  cmdModal.setAttribute('aria-hidden','true');
+  cmdInput.value = cmdModalInput.value;
+  if(window.__heroMode !== 'portfolio') document.documentElement.classList.remove('locked');
+}
+
+cmdInput.addEventListener('focus', openCmdbarModal);
+
+cmdModalInput.addEventListener('input', () => {
+  cmdInput.value = cmdModalInput.value;
+});
+
+cmdModalInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    cmdForm.dispatchEvent(new Event('submit'));
+  }
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    closeCmdbarModal();
+  }
+});
+
+cmdModalClose.addEventListener('click', closeCmdbarModal);
+cmdModalSend.addEventListener('click', () => {
+  cmdForm.dispatchEvent(new Event('submit'));
+});
+
+cmdModal.addEventListener('click', (e) => {
+  if(e.target === cmdModal && !cmdModalInput.value.trim()) closeCmdbarModal();
+});
+
+cmdForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const val = cmdInput.value.trim();
+  if(!val || isAnalyzing) return;
+
+  isAnalyzing = true;
+  cmdModalShell.classList.add('loading');
+  cmdModalInput.disabled = true;
+  cmdModalSend.disabled = true;
+
+  const tags = decomposeIdea(val);
+  const projects = matchProjects(val, tags);
+  const mvp = generateMvp(val, tags);
+  const steps = generateNextSteps(val, tags);
+
+  if(window.__graphDecompose) window.__graphDecompose(tags);
+
+  analyzeTimeout = setTimeout(() => {
+    sessionStorage.setItem('agustinIdeaAnalysis', JSON.stringify({
+      idea: val,
+      tags,
+      projects: projects.map(p => ({ id: p.id, title: p.title, category: p.category, type: p.type })),
+      mvp,
+      steps
+    }));
+    const veil = document.getElementById('transition-veil');
+    if(veil) veil.classList.add('show');
+    analyzeNavTimeout = setTimeout(() => {
+      window.location.href = 'analysis.html';
+    }, 500);
+  }, 1500);
+});
+
+resultStageBack.addEventListener('click', () => closeResultStage());
+resultStageBackBottom.addEventListener('click', () => closeResultStage());
+resultStageNew.addEventListener('click', () => {
+  closeResultStage(true);
+  openCmdbarModal();
+});
+
+window.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && resultStage.classList.contains('show')){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closeResultStage();
+  }
+});
+
+/* ============ PROJECT GRAPH (SVG, section 04) ============ */
+const svg = document.getElementById('pgraph');
+const W = 900, H = 380, CX = W/2, CY = H/2;
+function buildGraph(){
+  const catAngleStep = (Math.PI*2)/CATEGORIES.length;
+  const catNodes = CATEGORIES.map((c,i) => ({
+    id:c,
+    x: CX + Math.cos(i*catAngleStep - Math.PI/2) * 150,
+    y: CY + Math.sin(i*catAngleStep - Math.PI/2) * 120,
+  }));
+  let svgStr = '';
+  catNodes.forEach(c => {
+    svgStr += `<line class="link" x1="${CX}" y1="${CY}" x2="${c.x}" y2="${c.y}"/>`;
+  });
+  const projPositions = {};
+  CATEGORIES.forEach((cat, ci) => {
+    const catNode = catNodes[ci];
+    const projs = PROJECTS.filter(p => p.category === cat);
+    const angleBase = Math.atan2(catNode.y-CY, catNode.x-CX);
+    projs.forEach((p, pi) => {
+      const spread = (pi - (projs.length-1)/2) * 0.5;
+      const dist = 85;
+      const x = catNode.x + Math.cos(angleBase + spread) * dist;
+      const y = catNode.y + Math.sin(angleBase + spread) * dist;
+      projPositions[p.id] = {x,y};
+      svgStr += `<line class="link" x1="${catNode.x}" y1="${catNode.y}" x2="${x}" y2="${y}"/>`;
+    });
+  });
+  svgStr += `<g class="center"><circle cx="${CX}" cy="${CY}" r="7"/><text x="${CX}" y="${CY-14}" text-anchor="middle">AI</text></g>`;
+  catNodes.forEach(c => {
+    svgStr += `<g class="cat"><circle cx="${c.x}" cy="${c.y}" r="5"/><text x="${c.x}" y="${c.y-12}" text-anchor="middle">${c.id.toUpperCase()}</text></g>`;
+  });
+  PROJECTS.forEach(p => {
+    const pos = projPositions[p.id];
+    svgStr += `<g class="proj" data-proj="${p.id}"><circle cx="${pos.x}" cy="${pos.y}" r="4"/><text x="${pos.x}" y="${pos.y+16}" text-anchor="middle">${p.title}</text></g>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = svgStr;
+  svg.querySelectorAll('.proj').forEach(g => {
+    g.addEventListener('click', () => showProjectDetail(g.dataset.proj));
+  });
+}
+buildGraph();
+
+const projDetail = document.getElementById('proj-detail');
+function showProjectDetail(id){
+  const p = PROJECTS.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('pd-title').textContent = p.title;
+  document.getElementById('pd-meta').textContent = `${p.category} · ${p.type}`;
+  document.getElementById('pd-desc').textContent = p.desc;
+  projDetail.classList.add('show');
+}
+
+function goTo(href){
+  if(href === 'about.html' || href.startsWith('http')){
+    window.location.href = href;
+    return;
+  }
+  let hash = href;
+  if(href.startsWith('index.html')) hash = href.slice(10) || '#understand';
+  if(window.__heroMode === 'explore'){
+    window.__enterPortfolio(hash);
+  } else {
+    const target = document.querySelector(hash);
+    if(target) target.scrollIntoView({behavior:'smooth'});
+  }
+}
+document.querySelectorAll('nav.links a[data-nav]').forEach(a => {
+  a.addEventListener('click', (e) => { e.preventDefault(); goTo(a.getAttribute('href')); });
+});
+
+/* ============ COMMAND PALETTE ============ */
+const cmdkOverlay = document.getElementById('cmdk-overlay');
+const cmdkInput = document.getElementById('cmdk-input');
+const cmdkList = document.getElementById('cmdk-list');
+const COMMANDS = [
+  ...CONCEPTS.map((key,i) => ({ label:key, tag:NODE_DATA[key].tag, action:()=>window.__enterInspect(i) })),
+  ...PROJECTS.map(p => ({ label:p.title, tag:p.category, action:()=>{ window.__enterPortfolio('#proof'); setTimeout(()=>showProjectDetail(p.id),950); } })),
+  { label:'Work', tag:'SECTION', href:'#build' },
+  { label:'AI', tag:'SECTION', href:'#understand' },
+  { label:'Proof', tag:'SECTION', href:'#proof' },
+  { label:'About', tag:'SECTION', href:'#connect' },
+  { label:'Contact', tag:'SECTION', href:'#connect' },
+];
+function renderCmdk(filter=''){
+  const f = filter.toLowerCase();
+  const items = COMMANDS.filter(c => c.label.toLowerCase().includes(f));
+  cmdkList.innerHTML = items.map((c,i) =>
+    `<div class="cmdk-item${i===0?' active':''}" data-idx="${i}"><span>${c.label}</span><span class="tag">${c.tag}</span></div>`
+  ).join('') || `<div class="cmdk-item">No results</div>`;
+  cmdkList.querySelectorAll('.cmdk-item[data-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      const c = items[Number(el.dataset.idx)];
+      if(!c) return;
+      closeCmdk();
+      if(c.action) c.action();
+      else if(c.href) goTo(c.href);
+    });
+  });
+}
+function openCmdk(){ cmdkOverlay.classList.add('show'); cmdkInput.value=''; renderCmdk(); cmdkInput.focus(); }
+function closeCmdk(){ cmdkOverlay.classList.remove('show'); }
+document.getElementById('menu-btn').addEventListener('click', openCmdk);
+cmdkOverlay.addEventListener('click', (e) => { if(e.target === cmdkOverlay) closeCmdk(); });
+cmdkInput.addEventListener('input', () => renderCmdk(cmdkInput.value));
+window.addEventListener('keydown', (e) => {
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); if(cmdkOverlay.classList.contains('show')) closeCmdk(); else openCmdk(); return; }
+  if(cmdkOverlay.classList.contains('show') && e.key === 'Escape'){ e.preventDefault(); closeCmdk(); }
+});
+
+/* ============ MOBILE MENU ============ */
+(function(){
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileClose = document.getElementById('mobile-close');
+  if(!hamburger || !mobileMenu) return;
+  function open(){ mobileMenu.classList.add('show'); hamburger.setAttribute('aria-expanded','true'); document.documentElement.classList.add('locked'); }
+  function close(){ mobileMenu.classList.remove('show'); hamburger.setAttribute('aria-expanded','false'); if(window.__heroMode !== 'portfolio') document.documentElement.classList.remove('locked'); }
+  hamburger.addEventListener('click', open);
+  mobileClose.addEventListener('click', close);
+  mobileMenu.querySelectorAll('a[data-nav]').forEach(a => {
+    a.addEventListener('click', (e) => { e.preventDefault(); close(); goTo(a.getAttribute('href')); });
+  });
+})();
+
+/* ============ ONBOARDING HINT ============ */
+(function(){
+  const hint = document.getElementById('onboarding-hint');
+  if(!hint || localStorage.getItem('hero-onboarded') === '1'){ if(hint) hint.style.display='none'; return; }
+  function dismiss(){
+    hint.classList.add('dismissed');
+    localStorage.setItem('hero-onboarded','1');
+    setTimeout(() => hint.style.display='none', 350);
+  }
+  window.addEventListener('pointerdown', dismiss, {once:true});
+  window.addEventListener('keydown', dismiss, {once:true});
+  window.addEventListener('wheel', dismiss, {once:true});
+})();
+
+/* ============ TELEMETRY TICKER ============ */
+(function(){
+  const nodesEl = document.getElementById('tm-nodes');
+  const syncEl = document.getElementById('tm-sync');
+  const latEl = document.getElementById('tm-latency');
+  if(!nodesEl) return;
+  setInterval(() => {
+    nodesEl.textContent = 148 + Math.floor(Math.random()*9);
+    syncEl.textContent = (98 + Math.random()*2).toFixed(1) + '%';
+    latEl.textContent = (12 + Math.floor(Math.random()*14)) + 'ms';
+  }, 1400);
+})();
+
+/* ============ THREE.JS AI CORE / KNOWLEDGE GRAPH ============ */
+(function(){
+  const canvas = document.getElementById('graph-canvas');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a0a0b, 0.055);
+  const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+  camera.position.set(0, 0, 15);
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  function resize(){
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const accent = new THREE.Color(0x3b82f6);
+  const dim = new THREE.Color(0x3a3b3e);
+  const white = new THREE.Color(0xffffff);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const hubCount = CONCEPTS.length;
+  const hubPositions = [];
+  for(let i=0;i<hubCount;i++){
+    const phi = Math.acos(1 - 2*(i+0.5)/hubCount);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const r = 3.4;
+    hubPositions.push(new THREE.Vector3(
+      r*Math.sin(phi)*Math.cos(theta),
+      r*Math.sin(phi)*Math.sin(theta),
+      r*Math.cos(phi)
+    ));
+  }
+
+  const haloCanvas = document.createElement('canvas');
+  haloCanvas.width = haloCanvas.height = 128;
+  const hctx = haloCanvas.getContext('2d');
+  const grad = hctx.createRadialGradient(64,64,0,64,64,64);
+  grad.addColorStop(0, 'rgba(147,197,253,0.9)');
+  grad.addColorStop(0.4, 'rgba(59,130,246,0.35)');
+  grad.addColorStop(1, 'rgba(59,130,246,0)');
+  hctx.fillStyle = grad;
+  hctx.fillRect(0,0,128,128);
+  const haloTex = new THREE.CanvasTexture(haloCanvas);
+  const haloMat = new THREE.SpriteMaterial({ map: haloTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending });
+
+  const hubGeo = new THREE.SphereGeometry(0.09, 16, 16);
+  const hubMat = new THREE.MeshBasicMaterial({ color: accent });
+  const hubMeshes = hubPositions.map(pos => {
+    const m = new THREE.Mesh(hubGeo, hubMat);
+    m.position.copy(pos);
+    group.add(m);
+    const halo = new THREE.Sprite(haloMat.clone());
+    halo.scale.set(0.7,0.7,1);
+    halo.position.copy(pos);
+    group.add(halo);
+    m.userData.halo = halo;
+    return m;
+  });
+
+  const centerGeo = new THREE.SphereGeometry(0.06, 16, 16);
+  const centerMesh = new THREE.Mesh(centerGeo, new THREE.MeshBasicMaterial({color:0xffffff}));
+  group.add(centerMesh);
+  const centerHalo = new THREE.Sprite(haloMat.clone());
+  centerHalo.material.color = new THREE.Color(0xffffff);
+  centerHalo.scale.set(0.55,0.55,1);
+  group.add(centerHalo);
+
+  const lineMat = new THREE.LineBasicMaterial({ color: dim, transparent:true, opacity:0.5 });
+  hubPositions.forEach(pos => {
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), pos]);
+    group.add(new THREE.Line(geo, lineMat));
+  });
+  for(let i=0;i<hubCount;i++){
+    const a = hubPositions[i], b = hubPositions[(i+1)%hubCount];
+    const geo = new THREE.BufferGeometry().setFromPoints([a,b]);
+    group.add(new THREE.Line(geo, lineMat));
+  }
+
+  // faint orbital rings
+  const ringMat = new THREE.MeshBasicMaterial({ color: dim, transparent:true, opacity:0.10, side:THREE.DoubleSide });
+  const ringGroup = new THREE.Group();
+  [3.9, 4.9, 6.0].forEach((r, i) => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 8, 80), ringMat);
+    ring.rotation.x = (i * 0.7);
+    ring.rotation.y = (i * 0.4);
+    ringGroup.add(ring);
+  });
+  group.add(ringGroup);
+
+  // light/dark color scheme for 3D scene (default light)
+  const colorSchemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+  function applyColorScheme(){
+    const dark = colorSchemeMq.matches;
+    scene.fog.color.set(dark ? 0x0a0a0b : 0xf5f5f7);
+    renderer.setClearColor(dark ? 0x0a0a0b : 0xf5f5f7, 0);
+    lineMat.color.set(dark ? 0x3a3b3e : 0xc8cace);
+    ambLineMat.color.set(dark ? 0x3a3b3e : 0xc8cace);
+    gridMat.color.set(dark ? 0x2a2b2f : 0xdfe0e4);
+    ambientMat.color.set(dark ? 0x9a9c9f : 0x8e9096);
+    ringMat.color.set(dark ? 0x3a3b3e : 0xc8cace);
+    labelEls.forEach(el => el.style.color = dark ? '#c9cacc' : '#4b4d52');
+  }
+  colorSchemeMq.addEventListener('change', applyColorScheme);
+
+  const gridGroup = new THREE.Group();
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x2a2b2f, transparent:true, opacity:0.35 });
+  const gridSize = 14, gridDiv = 14;
+  for(let i=0;i<=gridDiv;i++){
+    const p = -gridSize/2 + (gridSize/gridDiv)*i;
+    const g1 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p,0,-gridSize/2), new THREE.Vector3(p,0,gridSize/2)]);
+    gridGroup.add(new THREE.Line(g1, gridMat));
+    const g2 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-gridSize/2,0,p), new THREE.Vector3(gridSize/2,0,p)]);
+    gridGroup.add(new THREE.Line(g2, gridMat));
+  }
+  gridGroup.position.y = -3.6;
+  scene.add(gridGroup);
+
+  const AMBIENT = 90;
+  const ambientPositions = [];
+  for(let i=0;i<AMBIENT;i++){
+    const r = 2.2 + Math.random()*2.4;
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(2*Math.random()-1);
+    ambientPositions.push(new THREE.Vector3(
+      r*Math.sin(phi)*Math.cos(theta),
+      r*Math.sin(phi)*Math.sin(theta),
+      r*Math.cos(phi)
+    ));
+  }
+  const ambientGeo = new THREE.BufferGeometry();
+  ambientGeo.setFromPoints(ambientPositions);
+  const ambientMat = new THREE.PointsMaterial({ color: 0x9a9c9f, size:0.045, transparent:true, opacity:0.6 });
+  const ambientPoints = new THREE.Points(ambientGeo, ambientMat);
+  group.add(ambientPoints);
+
+  const ambLineMat = new THREE.LineBasicMaterial({ color: dim, transparent:true, opacity:0.22 });
+  for(let i=0;i<AMBIENT;i++){
+    for(let j=i+1;j<AMBIENT;j++){
+      if(ambientPositions[i].distanceTo(ambientPositions[j]) < 1.15 && Math.random() < 0.3){
+        const geo = new THREE.BufferGeometry().setFromPoints([ambientPositions[i], ambientPositions[j]]);
+        group.add(new THREE.Line(geo, ambLineMat));
+      }
+    }
+  }
+
+  const labelLayer = document.createElement('div');
+  labelLayer.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:1;';
+  canvas.parentElement.appendChild(labelLayer);
+  const labelEls = CONCEPTS.map(text => {
+    const el = document.createElement('div');
+    el.textContent = text;
+    el.style.cssText = `position:absolute; font-family:${getComputedStyle(document.documentElement).getPropertyValue('--mono')}; font-size:11px; color:#c9cacc; letter-spacing:0.04em; transform:translate(-50%,-50%); white-space:nowrap; transition:opacity .3s;`;
+    labelLayer.appendChild(el);
+    return el;
+  });
+  applyColorScheme();
+
+  function updateLabels(){
+    const rect = canvas.getBoundingClientRect();
+    hubPositions.forEach((pos, i) => {
+      const v = pos.clone().applyMatrix4(group.matrixWorld).project(camera);
+      const x = (v.x * 0.5 + 0.5) * rect.width;
+      const y = (-v.y * 0.5 + 0.5) * rect.height;
+      const visible = v.z < 1;
+      labelEls[i].style.opacity = visible ? '1' : '0';
+      labelEls[i].style.left = x + 'px';
+      labelEls[i].style.top = (y - 14) + 'px';
+    });
+  }
+
+  /* ============ NAVIGATION STATE ============ */
+  window.__heroMode = 'explore';
+  let mode = 'explore'; // explore | inspect | result
+  let selectedNodeIndex = -1;
+  let rafId = null;
+  const heroEl = document.getElementById('hero');
+  const nodePanel = document.getElementById('node-panel');
+  const focusRing = document.getElementById('focus-ring');
+
+  let cameraHome = new THREE.Vector3(0, 0, 15);
+  let cameraTargetPos = cameraHome.clone();
+  let cameraTargetLookAt = new THREE.Vector3(0, 0, 0);
+  let currentLookAt = new THREE.Vector3(0, 0, 0);
+
+  // idle hover parallax + cursor feedback + tooltip
+  let hoverRotX = 0, hoverRotY = 0;
+  function getNodePreview(desc){ return desc ? desc.slice(0, 90) + (desc.length > 90 ? '…' : '') : ''; }
+  window.addEventListener('mousemove', (e) => {
+    const mx = (e.clientX / window.innerWidth) * 2 - 1;
+    const my = (e.clientY / window.innerHeight) * 2 - 1;
+    hoverRotY = mx * 0.12;
+    hoverRotX = my * 0.06;
+
+    ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+    ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(hubMeshes);
+    if(hits.length && mode === 'explore' && !isDragging){
+      canvas.style.cursor = 'pointer';
+      const idx = hubMeshes.indexOf(hits[0].object);
+      if(focusedIndex !== idx){
+        focusedIndex = idx;
+        const key = CONCEPTS[idx];
+        const data = NODE_DATA[key];
+        ntTitle.textContent = key;
+        document.getElementById('nt-tag').textContent = data.tag;
+        document.getElementById('nt-preview').textContent = getNodePreview(data.desc);
+        tooltip.classList.add('show');
+      }
+    } else {
+      canvas.style.cursor = mode === 'explore' ? (isDragging ? 'grabbing' : 'grab') : '';
+      focusedIndex = -1;
+      tooltip.classList.remove('show');
+    }
+    updateTooltipPosition();
+  });
+
+  // click-and-drag orbit
+  let dragRotX = 0, dragRotY = 0;
+  let isDragging = false, dragStartX = 0, dragStartY = 0, dragStartRotX = 0, dragStartRotY = 0, dragMoved = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    if(window.__heroMode !== 'explore' || mode !== 'explore') return;
+    isDragging = true; dragMoved = 0;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragStartRotX = dragRotX; dragStartRotY = dragRotY;
+  });
+  window.addEventListener('pointermove', (e) => {
+    if(!isDragging) return;
+    const dx = e.clientX - dragStartX, dy = e.clientY - dragStartY;
+    dragMoved = Math.max(dragMoved, Math.abs(dx) + Math.abs(dy));
+    dragRotY = dragStartRotY + dx * 0.006;
+    dragRotX = Math.max(-0.9, Math.min(0.9, dragStartRotX + dy * 0.004));
+  });
+  window.addEventListener('pointerup', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    if(dragMoved < 6) handleCanvasClick(e);
+  });
+
+  // WASD / arrow keys + inspect keyboard navigation
+  const keysDown = {};
+  window.addEventListener('keydown', (e) => {
+    if(cmdkOverlay.classList.contains('show')) return;
+    if(window.__heroMode === 'explore' && mode === 'explore' && !e.repeat) keysDown[e.key.toLowerCase()] = true;
+    if(e.key === 'Escape'){
+      if(mode !== 'explore'){ e.preventDefault(); exitInspect(); }
+      else { focusedIndex = -1; tooltip.classList.remove('show'); }
+    }
+    if(window.__heroMode === 'explore' && mode === 'inspect' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')){
+      e.preventDefault();
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      enterInspect((selectedNodeIndex + dir + hubCount) % hubCount);
+    }
+  });
+  window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
+
+  // wheel — zoom behavior depends on mode
+  let zoomZ = 9, zoomLocked = false;
+  window.addEventListener('wheel', (e) => {
+    if(window.__heroMode !== 'explore') return;
+    if(mode === 'inspect'){
+      // Let the node panel scroll independently; wheel outside the panel returns to orbit
+      if(nodePanel.contains(e.target)) return;
+      e.preventDefault();
+      if(e.deltaY > 0) exitInspect();
+      return;
+    }
+    e.preventDefault();
+    zoomZ = Math.max(5.5, Math.min(24, zoomZ + e.deltaY * 0.012));
+    if(zoomZ > 21.5 && !zoomLocked){ zoomLocked = true; window.__enterPortfolio(); }
+  }, { passive:false });
+
+  // Raycaster and node info
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+
+  let focusedIndex = -1;
+  const tooltip = document.getElementById('node-tooltip');
+  const ntTitle = document.getElementById('nt-title');
+  const ntDesc = document.getElementById('nt-desc');
+
+  function handleCanvasClick(e){
+    ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+    ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(hubMeshes);
+    if(hits.length){
+      const idx = hubMeshes.indexOf(hits[0].object);
+      enterInspect(idx);
+    } else if(mode !== 'explore') {
+      exitInspect();
+    } else {
+      focusedIndex = -1;
+      tooltip.classList.remove('show');
+    }
+  }
+
+  function enterInspect(idx){
+    if(window.__heroMode !== 'explore') return;
+    mode = 'inspect';
+    selectedNodeIndex = idx;
+    focusedIndex = idx;
+    heroEl.classList.add('inspect-mode');
+    nodePanel.classList.add('show');
+    nodePanel.setAttribute('aria-hidden', 'false');
+    focusRing.classList.add('active');
+    tooltip.classList.remove('show');
+
+    renderNodePanel(CONCEPTS[idx]);
+
+    // Set camera target near the node
+    const worldPos = hubPositions[idx].clone().applyMatrix4(group.matrixWorld);
+    const dir = worldPos.clone().normalize();
+    cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
+    cameraTargetLookAt.copy(worldPos);
+
+    hubMeshes.forEach((m, i) => {
+      const isSelected = i === idx;
+      m.material.color.set(isSelected ? white : accent);
+      m.userData.halo.material.color.set(isSelected ? white : accent);
+      m.userData.halo.scale.setScalar(isSelected ? 1.1 : 0.7);
+    });
+    updateNodeDots();
+  }
+  window.__enterInspect = enterInspect;
+
+  function exitInspect(){
+    mode = 'explore';
+    selectedNodeIndex = -1;
+    focusedIndex = -1;
+    heroEl.classList.remove('inspect-mode');
+    nodePanel.classList.remove('show');
+    nodePanel.setAttribute('aria-hidden', 'true');
+    focusRing.classList.remove('active');
+    tooltip.classList.remove('show');
+    cameraTargetPos.copy(cameraHome);
+    cameraTargetLookAt.set(0,0,0);
+    hubMeshes.forEach(m => {
+      m.material.color.set(accent);
+      m.userData.halo.material.color.set(accent);
+      m.userData.halo.scale.setScalar(0.7);
+    });
+    updateNodeDots();
+  }
+
+  function updateTooltipPosition(){
+    if(focusedIndex < 0 || mode !== 'explore') return;
+    const rect = canvas.getBoundingClientRect();
+    const v = hubPositions[focusedIndex].clone().applyMatrix4(group.matrixWorld).project(camera);
+    tooltip.style.left = ((v.x * 0.5 + 0.5) * rect.width) + 'px';
+    tooltip.style.top = ((-v.y * 0.5 + 0.5) * rect.height) + 'px';
+  }
+
+  document.getElementById('back-to-orbit').addEventListener('click', exitInspect);
+
+  // active-node mini indicator
+  const nodeDotsEl = document.getElementById('node-dots');
+  function renderNodeDots(){
+    nodeDotsEl.innerHTML = CONCEPTS.map((key,i) =>
+      `<button class="node-dot${i===selectedNodeIndex?' active':''}" data-index="${i}" aria-label="Inspect ${key}"></button>`
+    ).join('');
+    nodeDotsEl.querySelectorAll('.node-dot').forEach(btn => {
+      btn.addEventListener('click', () => { if(window.__heroMode === 'explore') enterInspect(Number(btn.dataset.index)); });
+    });
+  }
+  function updateNodeDots(){
+    nodeDotsEl.querySelectorAll('.node-dot').forEach((btn,i) => btn.classList.toggle('active', i === selectedNodeIndex));
+  }
+  renderNodeDots();
+
+  /* ============ PANEL RENDERING ============ */
+  const npTitle = document.getElementById('np-title');
+  const npTag = document.getElementById('np-tag');
+  const npDesc = document.getElementById('np-desc');
+  const npChips = document.getElementById('np-chips');
+  const npContent = document.getElementById('np-content');
+  const npActions = document.getElementById('np-actions');
+  const npAnalyze = document.getElementById('np-analyze');
+  const npProjects = document.getElementById('np-projects');
+  const npContact = document.getElementById('np-contact');
+  const nodeIdeaView = document.getElementById('node-idea-view');
+  const nodeIdeaInput = document.getElementById('node-idea-input');
+  const nodeIdeaSubmit = document.getElementById('node-idea-submit');
+  const nodeIdeaBack = document.getElementById('node-idea-back');
+  const aiResult = document.getElementById('ai-result');
+  const aiResultPitch = document.getElementById('ai-result-pitch');
+  const aiResultChips = document.getElementById('ai-result-chips');
+  const aiResultSteps = document.getElementById('ai-result-steps');
+  const aiSendLink = document.getElementById('ai-send-link');
+  const aiNewIdea = document.getElementById('ai-new-idea');
+  const npHint = document.getElementById('np-hint');
+
+  let currentNodeKey = null;
+
+  function renderNodePanel(key){
+    currentNodeKey = key;
+    const data = NODE_DATA[key];
+    npTitle.textContent = key;
+    npTag.textContent = data.tag;
+    npDesc.textContent = data.desc;
+    npChips.innerHTML = data.chips.map(c => `<span>${c}</span>`).join('');
+
+    // Reset idea view
+    nodeIdeaView.classList.remove('show');
+    aiResult.classList.remove('show');
+    nodeIdeaInput.value = '';
+
+    // Render content
+    npContent.innerHTML = renderNodeContent(key, data.content);
+    npContent.style.display = 'block';
+
+    // Render actions
+    const hasAnalyze = data.actions.includes('analyze');
+    const hasContact = data.actions.includes('contact');
+    npAnalyze.style.display = hasAnalyze ? 'inline-flex' : 'none';
+    npContact.style.display = hasContact ? 'inline-flex' : 'none';
+    npProjects.style.display = key === 'PROJECTS' ? 'inline-flex' : 'none';
+
+    // Attach dynamic handlers
+    attachContentHandlers(key, data.content);
+  }
+
+  function renderNodeContent(key, content){
+    if(!content) return '';
+    const title = content.title ? `<h3>${content.title}</h3>` : '';
+
+    if(content.type === 'list'){
+      return title + `<ul class="node-content-list">${content.items.map(item =>
+        `<li><strong>${item.title}</strong> — ${item.text}</li>`
+      ).join('')}</ul>`;
+    }
+
+    if(content.type === 'tools'){
+      return title + `<div class="node-grid node-tools">${content.items.map(tool =>
+        `<div class="node-card node-tool-card">
+          <div class="node-card-title">${tool.name}<span class="node-card-meta">${tool.meta}</span></div>
+          <div class="node-card-desc">${tool.desc}</div>
+          <div class="node-card-links">${tool.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>
+        </div>`
+      ).join('')}</div>`;
+    }
+
+    if(content.type === 'projects'){
+      const filters = ['All', ...CATEGORIES];
+      return title + `
+        <div class="node-filter" id="project-filters">${filters.map(f =>
+          `<button type="button" data-filter="${f}" class="${f === 'All' ? 'active' : ''}">${f}</button>`
+        ).join('')}</div>
+        <div class="node-grid node-projects" id="project-grid">${renderProjectCards(PROJECTS)}</div>`;
+    }
+
+    if(content.type === 'resources'){
+      return title + `<div class="node-grid node-resources">${content.items.map(r =>
+        `<div class="node-card node-resource-card">
+          <div class="node-card-title">${r.title}</div>
+          <div class="node-card-meta">${r.author} · ${r.type}</div>
+          <div class="node-card-links"><a href="${r.link}" target="_blank" rel="noopener">Read →</a></div>
+        </div>`
+      ).join('')}</div>`;
+    }
+
+    if(content.type === 'testimonials'){
+      return title + `<div class="node-testimonials">${content.items.map(t =>
+        `<blockquote class="node-testimonial">
+          <q>${t.quote}</q>
+          <cite><strong>${t.author}</strong> — ${t.role}</cite>
+        </blockquote>`
+      ).join('')}</div>`;
+    }
+
+    if(content.type === 'timeline'){
+      return title + `<div class="node-timeline">${content.items.map(item =>
+        `<div class="node-timeline-item">
+          <div class="node-timeline-date">${item.date}</div>
+          <div class="node-timeline-role">${item.role}</div>
+          <div class="node-timeline-company">${item.company}</div>
+        </div>`
+      ).join('')}</div>`;
+    }
+
+    return '';
+  }
+
+  function renderProjectCards(projects){
+    return projects.map(p => `
+      <div class="node-card node-project-card" data-category="${p.category}">
+        <div class="node-card-title">${p.title}<span class="node-card-meta">${p.category} · ${p.type}</span></div>
+        <div class="node-card-desc">${p.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  function attachContentHandlers(key, content){
+    if(content.type === 'projects'){
+      const filterContainer = document.getElementById('project-filters');
+      const grid = document.getElementById('project-grid');
+      if(!filterContainer || !grid) return;
+      filterContainer.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          const filtered = filter === 'All' ? PROJECTS : PROJECTS.filter(p => p.category === filter);
+          grid.innerHTML = renderProjectCards(filtered);
+        });
+      });
+    }
+  }
+
+  // Panel action buttons
+  npAnalyze.addEventListener('click', () => {
+    if(!currentNodeKey) return;
+    npContent.style.display = 'none';
+    npActions.style.display = 'none';
+    nodeIdeaView.classList.add('show');
+    npHint.textContent = NODE_DATA[currentNodeKey].hint || 'Describe your idea. I will reshape it through this lens.';
+    nodeIdeaInput.focus();
+  });
+
+  npProjects.addEventListener('click', () => {
+    // Scroll panel content into view if collapsed, or noop if visible
+    npContent.style.display = 'block';
+    const grid = document.getElementById('project-grid');
+    if(grid) grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  npContact.addEventListener('click', () => {
+    window.__enterPortfolio('#connect');
+  });
+
+  nodeIdeaBack.addEventListener('click', () => {
+    nodeIdeaView.classList.remove('show');
+    npContent.style.display = 'block';
+    npActions.style.display = 'flex';
+    aiResult.classList.remove('show');
+    nodeIdeaInput.value = '';
+    mode = 'inspect';
+  });
+
+  /* ============ NODE IDEA ANALYSIS ============ */
+  const NODE_ENRICHMENT = {
+    AI: { lens: 'AI-native', angle: 'Use AI to automate a core decision or workflow, not as a chat layer.', verbs: ['automate', 'predict', 'generate', 'rank'] },
+    CODE: { lens: 'Technical product', angle: 'Define the stack, data model and critical APIs first.', verbs: ['build', 'integrate', 'deploy', 'scale'] },
+    PROJECTS: { lens: 'Portfolio-style', angle: 'Reuse proven patterns from similar shipped products.', verbs: ['match', 'adapt', 'launch', 'grow'] },
+    MVP: { lens: 'MVP', angle: 'Cut everything except the one loop that proves value.', verbs: ['ship', 'test', 'learn', 'iterate'] },
+    RESOURCES: { lens: 'Knowledge-driven', angle: 'Turn proven mental models into a repeatable product process.', verbs: ['apply', 'teach', 'share', 'scale'] },
+    CLIENTS: { lens: 'Client-backed', angle: 'Build something that earns trust and delivers measurable outcomes.', verbs: ['deliver', 'earn', 'satisfy', 'grow'] },
+    ABOUT: { lens: 'Founder-led', angle: 'Lead product and execution end-to-end with clear ownership.', verbs: ['lead', 'ship', 'own', 'scale'] },
+    REASONING: { lens: 'Systems-thinking', angle: 'Design the simplest system that solves the real problem.', verbs: ['simplify', 'connect', 'measure', 'iterate'] },
+    ENVIRONMENT: { lens: 'Sustainability-driven', angle: 'Design products that account for systemic impact and long-term resilience.', verbs: ['measure', 'reduce', 'balance', 'sustain'] },
+    'AI DEV': { lens: 'AI-native solution', angle: 'Build agents and automations that multiply team output.', verbs: ['automate', 'orchestrate', 'generate', 'reason'] },
+  };
+
+  const STEP_TEMPLATES = [
+    'Define the primary user and the one job they hire this product to do.',
+    'Map the smallest loop that delivers value end-to-end.',
+    'Choose the metric that proves the loop works and how to measure it.',
+    'Identify the highest-risk assumption and a 48-hour validation test.',
+    'Build the MVP surface and ship to 5 real users before adding features.',
+    'Connect analytics and feedback channels to guide the next iteration.',
+  ];
+
+  function polishIdea(text, nodeKey){
+    const enrichment = NODE_ENRICHMENT[nodeKey];
+    const lower = text.toLowerCase();
+    const tags = decomposeIdea(text);
+
+    const verbs = lower.match(/\b(connect|track|manage|share|find|match|pay|automate|build|launch|monitor|analyze|book|schedule|order|deliver|learn|teach|design|create)\b/g) || [];
+    const mainVerb = verbs[0] || enrichment.verbs[0];
+
+    const pitch = `${enrichment.lens} product that ${mainVerb}s ${lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '')}. ${enrichment.angle}`;
+
+    const components = [...new Set([...tags.slice(0,3), ...enrichment.verbs.slice(0,2).map(v => v.toUpperCase())])];
+
+    const steps = [
+      STEP_TEMPLATES[0],
+      `Apply the ${nodeKey} lens: ${enrichment.angle.toLowerCase()}`,
+      STEP_TEMPLATES[2],
+      STEP_TEMPLATES[3],
+    ];
+
+    return { pitch, components, steps, nodeKey };
+  }
+
+  function typeText(el, text, speed=14, done){
+    el.textContent = '';
+    el.classList.add('typing');
+    let i=0;
+    function step(){
+      if(i < text.length){
+        el.textContent += text.charAt(i);
+        i++;
+        setTimeout(step, speed);
+      } else {
+        el.classList.remove('typing');
+        if(done) done();
+      }
+    }
+    step();
+  }
+
+  function runNodeAnalysis(){
+    const text = nodeIdeaInput.value.trim();
+    if(!text || !currentNodeKey) return;
+    const result = polishIdea(text, currentNodeKey);
+
+    aiResultChips.innerHTML = result.components.map((c,i) => `<span class="reveal-item" style="animation-delay:${i*60}ms">${c}</span>`).join('');
+    aiResultSteps.innerHTML = result.steps.map((s,i) => `<li class="reveal-item" style="animation-delay:${i*100}ms">${s}</li>`).join('');
+
+    const subject = encodeURIComponent(`Idea: ${text.substring(0, 50)}`);
+    const body = encodeURIComponent(
+      `Hi Agustín,\n\nI was exploring your ${currentNodeKey} node and polished this idea:\n\n"${result.pitch}"\n\n` +
+      `Core components: ${result.components.join(', ')}\n\n` +
+      `Next steps:\n${result.steps.map((s, i) => `${i+1}. ${s}`).join('\n')}\n\n` +
+      `Original idea: ${text}\n\nLet's talk.`
+    );
+    aiSendLink.href = `mailto:hola@agustin.top?subject=${subject}&body=${body}`;
+
+    aiResult.classList.add('show');
+    typeText(aiResultPitch, result.pitch, 14);
+    mode = 'result';
+  }
+
+  nodeIdeaSubmit.addEventListener('click', runNodeAnalysis);
+  nodeIdeaInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); runNodeAnalysis(); }
+  });
+  aiNewIdea.addEventListener('click', () => { nodeIdeaInput.value = ''; nodeIdeaInput.focus(); aiResult.classList.remove('show'); mode = 'inspect'; });
+
+  /* ============ PORTFOLIO TRANSITION ============ */
+  window.__enterPortfolio = function(targetHref){
+    if(window.__heroMode !== 'explore') return;
+    window.__heroMode = 'portfolio';
+    const veil = document.getElementById('transition-veil');
+    veil.classList.add('show');
+    setTimeout(() => {
+      heroEl.classList.add('exited');
+      document.documentElement.classList.remove('locked');
+      window.scrollTo(0,0);
+      setTimeout(() => {
+        heroEl.style.display = 'none';
+        if(rafId) cancelAnimationFrame(rafId);
+        veil.classList.remove('show');
+        const target = document.querySelector(targetHref || '#understand');
+        if(target) target.scrollIntoView({ behavior:'auto' });
+      }, 480);
+    }, 260);
+  };
+  document.getElementById('skip-btn').addEventListener('click', () => window.__enterPortfolio());
+
+  /* ============ IDEA DECOMPOSITION FX ============ */
+  let decomposeActive = false, decomposeTimer = null;
+  window.__graphDecompose = function(tags){
+    labelEls.forEach((el,i) => { el.textContent = tags[i] || CONCEPTS[i]; });
+    hubMeshes.forEach(m => {
+      m.material.color.set(0xffffff);
+      m.userData.halo.material.color.set(0xffffff);
+    });
+    decomposeActive = true;
+    clearTimeout(decomposeTimer);
+    decomposeTimer = setTimeout(() => {
+      labelEls.forEach((el,i) => { el.textContent = CONCEPTS[i]; });
+      hubMeshes.forEach(m => {
+        m.material.color.set(accent);
+        m.userData.halo.material.color.set(accent);
+      });
+      decomposeActive = false;
+    }, 4200);
+  };
+
+  // cinematic intro
+  const introStart = performance.now();
+  const introDuration = 2200;
+  function introProgress(){
+    const el = performance.now() - introStart;
+    return Math.min(el / introDuration, 1);
+  }
+  function easeOutExpo(x){ return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+
+  const exitProgressEl = document.getElementById('exit-progress');
+  let t = 0;
+  function animate(){
+    rafId = requestAnimationFrame(animate);
+    if(!reducedMotion){
+      t += 0.0022;
+
+      const panSpeed = 0.012;
+      if(mode === 'explore'){
+        if(keysDown['w'] || keysDown['arrowup']) dragRotX = Math.max(-0.9, dragRotX - panSpeed);
+        if(keysDown['s'] || keysDown['arrowdown']) dragRotX = Math.min(0.9, dragRotX + panSpeed);
+        if(keysDown['a'] || keysDown['arrowleft']) dragRotY -= panSpeed;
+        if(keysDown['d'] || keysDown['arrowright']) dragRotY += panSpeed;
+      }
+
+      group.rotation.y = t + dragRotY + hoverRotY * 0.5;
+      group.rotation.x = Math.sin(t*0.6)*0.08 + dragRotX + hoverRotX * 0.3;
+
+      const ip = easeOutExpo(introProgress());
+      const thinkZoom = decomposeActive ? -0.6 : 0;
+
+      const homeZ = 15 - ip * (15 - zoomZ) + thinkZoom;
+      cameraHome.set(0, 0, homeZ);
+
+      if(mode === 'explore'){
+        cameraTargetPos.lerp(cameraHome, 0.06);
+        cameraTargetLookAt.lerp(new THREE.Vector3(0,0,0), 0.06);
+      } else if(selectedNodeIndex >= 0) {
+        const worldPos = hubPositions[selectedNodeIndex].clone().applyMatrix4(group.matrixWorld);
+        const dir = worldPos.clone().normalize();
+        cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
+        cameraTargetLookAt.copy(worldPos);
+      }
+
+      camera.position.lerp(cameraTargetPos, 0.055);
+      currentLookAt.lerp(cameraTargetLookAt, 0.055);
+      camera.lookAt(currentLookAt);
+
+      const pulse = decomposeActive ? (1 + Math.sin(t*22)*0.06) : 1;
+      const breathing = (mode === 'explore' && !isDragging) ? (1 + Math.sin(t*1.4)*0.006) : 1;
+      group.scale.setScalar(pulse * breathing);
+
+      const haloPulse = decomposeActive ? (0.9 + Math.sin(t*30)*0.25) : 0.7;
+      hubMeshes.forEach((m, i) => {
+        if(i !== selectedNodeIndex) m.userData.halo.scale.setScalar(haloPulse);
+      });
+
+      gridGroup.rotation.y = t * 0.15;
+      gridGroup.position.y = -3.6 - (zoomZ - 9) * 0.05;
+
+      if(exitProgressEl && mode === 'explore'){
+        if(zoomZ > 10){
+          const pct = Math.min(100, Math.max(0, (zoomZ - 9)/(21.5 - 9)*100));
+          exitProgressEl.style.width = pct + '%';
+          exitProgressEl.classList.add('show');
+        } else {
+          exitProgressEl.classList.remove('show');
+        }
+      }
+    }
+    group.updateMatrixWorld();
+    updateLabels();
+    updateTooltipPosition();
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* ============ PARTICLE BACKGROUND (portfolio scroll) ============ */
+(function(){
+  const canvas = document.getElementById('particle-bg');
+  const ctx = canvas.getContext('2d');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let w, h, dpr;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COUNT = Math.min(90, Math.floor((w*h) / 22000));
+  const particles = Array.from({length: COUNT}, () => ({
+    x: Math.random()*w, y: Math.random()*h,
+    vy: 0.06 + Math.random()*0.1,
+    r: 0.8 + Math.random()*1.4,
+  }));
+
+  let lastScroll = window.scrollY, scrollVel = 0;
+  window.addEventListener('scroll', () => {
+    const now = window.scrollY;
+    scrollVel += (now - lastScroll) * 0.04;
+    lastScroll = now;
+  }, { passive:true });
+
+  function particleColors(){
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return { stroke: dark ? 'rgba(154,156,159,0.12)' : 'rgba(0,0,0,0.08)', fill: dark ? 'rgba(59,130,246,0.55)' : 'rgba(37,99,235,0.5)' };
+  }
+
+  function step(){
+    requestAnimationFrame(step);
+    if(reducedMotion){ return; }
+    scrollVel *= 0.9;
+    const colors = particleColors();
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = colors.stroke;
+    ctx.lineWidth = 1;
+    for(let i=0;i<particles.length;i++){
+      const p = particles[i];
+      p.y -= p.vy + scrollVel;
+      if(p.y < -10){ p.y = h + 10; p.x = Math.random()*w; }
+      if(p.y > h + 10){ p.y = -10; p.x = Math.random()*w; }
+      for(let j=i+1;j<particles.length;j++){
+        const q = particles[j];
+        const dx = p.x-q.x, dy = p.y-q.y;
+        const d2 = dx*dx+dy*dy;
+        if(d2 < 130*130){
+          ctx.globalAlpha = 1 - d2/(130*130);
+          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.fill;
+    particles.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  step();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — Agustín Avellaneda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f7;
+    --bg-panel:#ffffff;
+    --bg-overlay:rgba(255,255,255,0.96);
+    --line:#dfe0e4;
+    --text:#111214;
+    --text-dim:#4b4d52;
+    --text-faint:#8e9096;
+    --accent:#3b82f6;
+    --accent-dim:#1d4ed8;
+    --accent-glow:rgba(59,130,246,0.16);
+    --text-inverse:#ffffff;
+    --vignette:rgba(0,0,0,0.10);
+    --shadow:rgba(0,0,0,0.12);
+    --overlay:rgba(0,0,0,0.35);
+    --veil:#f5f5f7;
+    --highlight:rgba(0,0,0,0.03);
+    --grain-opacity:0.05;
+    --radius:2px;
+    --mono:'IBM Plex Mono', monospace;
+    --grotesk:'Space Grotesk', sans-serif;
+    --sans:'Inter', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0a0a0b;
+      --bg-panel:#111214;
+      --bg-overlay:rgba(13,13,15,0.95);
+      --line:#232427;
+      --text:#eeeeec;
+      --text-dim:#9a9c9f;
+      --text-faint:#5e6063;
+      --accent:#3b82f6;
+      --accent-dim:#1e40af;
+      --accent-glow:rgba(59,130,246,0.22);
+      --text-inverse:#0a0a0b;
+      --vignette:rgba(0,0,0,0.55);
+      --shadow:rgba(0,0,0,0.55);
+      --overlay:rgba(6,6,7,0.7);
+      --veil:#000;
+      --highlight:rgba(255,255,255,0.04);
+      --grain-opacity:0.035;
+    }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent); color:var(--text-inverse);}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  .scanlines{
+    position:fixed; inset:0; z-index:40; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(128,128,128,0.05) 0px, rgba(128,128,128,0.05) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:39; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%, transparent 45%, var(--vignette) 100%);
+  }
+  .grain{
+    position:fixed; inset:0; z-index:41; pointer-events:none; opacity:var(--grain-opacity); mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px;
+  }
+  .logo{font-family:var(--grotesk); font-weight:600; font-size:15px; letter-spacing:0.02em;}
+  .logo a{color:inherit;}
+  nav.links{display:flex; gap:28px; align-items:center; font-size:13px; font-family:var(--mono);}
+  nav.links a{opacity:0.75; transition:opacity .2s;}
+  nav.links a:hover{opacity:1;}
+  .hamburger{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:4px;
+    width:32px; height:32px; padding:0; background:none;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:var(--text); }
+  @media (max-width:720px){ nav.links{display:none;} .hamburger{display:flex;} }
+
+  .mobile-menu{
+    position:fixed; inset:0; z-index:60; background:var(--bg); display:none; flex-direction:column;
+    padding:22px 32px; opacity:0; transition:opacity .3s ease;
+  }
+  .mobile-menu.show{ display:flex; opacity:1; }
+  .mobile-close{ align-self:flex-end; font-size:32px; color:var(--text); line-height:1; padding:4px; }
+  .mobile-links{ display:flex; flex-direction:column; gap:18px; margin-top:48px; font-family:var(--grotesk); font-size:clamp(1.8rem,6vw,2.6rem); font-weight:600; }
+  .mobile-links a{ opacity:0.85; transition:opacity .2s; }
+  .mobile-links a:hover{ opacity:1; }
+
+  main{
+    position:relative; z-index:10;
+    max-width:860px; margin:0 auto;
+    padding:140px 32px 100px;
+  }
+
+  .reveal{ opacity:0; transform:translateY(12px); animation:fade-up .6s ease forwards; }
+  @keyframes fade-up{ to{ opacity:1; transform:translateY(0); } }
+
+  .hero{ margin-bottom:100px; }
+  .hero-label{
+    font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.04em; text-transform:uppercase;
+    margin-bottom:16px;
+  }
+  .hero-name{
+    font-family:var(--grotesk); font-weight:600;
+    font-size:clamp(2.4rem,6vw,4rem); line-height:1.05; letter-spacing:-0.015em;
+    margin-bottom:12px;
+  }
+  .hero-title{
+    font-size:clamp(1.1rem,2.4vw,1.4rem); color:var(--text-dim); margin-bottom:24px; line-height:1.45;
+  }
+  .hero-bio{
+    font-size:16px; color:var(--text-dim); line-height:1.65; max-width:58ch; margin-bottom:28px;
+  }
+  .hero-links{
+    display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:13px;
+  }
+  .hero-links a{
+    color:var(--text-dim); border-bottom:1px solid transparent; transition:color .2s, border-color .2s;
+  }
+  .hero-links a:hover{ color:var(--text); border-color:var(--text-faint); }
+
+  .section{ margin-bottom:90px; }
+  .sect-head{ display:flex; gap:20px; align-items:baseline; margin-bottom:36px; }
+  .sect-num{ font-family:var(--mono); color:var(--accent); font-size:13px; }
+  h2.sect-title{
+    font-family:var(--grotesk); font-weight:600; font-size:clamp(1.5rem,3vw,2.1rem);
+  }
+
+  .timeline{ display:flex; flex-direction:column; gap:16px; position:relative; padding-left:20px; }
+  .timeline::before{
+    content:''; position:absolute; left:5px; top:6px; bottom:6px; width:1px; background:var(--line);
+  }
+  .timeline-item{ position:relative; }
+  .timeline-item::before{
+    content:''; position:absolute; left:-20px; top:5px; width:9px; height:9px; border-radius:50%;
+    background:var(--bg-panel); border:2px solid var(--accent);
+  }
+  .timeline-date{ font-family:var(--mono); font-size:11px; color:var(--accent); margin-bottom:4px; }
+  .timeline-role{ font-family:var(--grotesk); font-size:17px; font-weight:600; }
+  .timeline-company{ font-size:14px; color:var(--text-dim); margin-top:2px; }
+
+  .projects-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  .project-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:8px;
+    padding:18px; transition:border-color .2s, transform .15s;
+  }
+  .project-card:hover{ border-color:var(--accent-dim); transform:translateY(-1px); }
+  .project-title{ font-family:var(--grotesk); font-size:16px; font-weight:600; margin-bottom:4px; }
+  .project-meta{ font-family:var(--mono); font-size:11px; color:var(--accent); margin-bottom:10px; text-transform:uppercase; }
+  .project-desc{ font-size:13px; color:var(--text-dim); line-height:1.55; }
+
+  .skills{ display:flex; flex-wrap:wrap; gap:10px; }
+  .skill-chip{
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:20px; padding:7px 13px;
+    transition:border-color .2s, color .2s;
+  }
+  .skill-chip:hover{ border-color:var(--accent-dim); color:var(--text); }
+
+  .contact-cta{
+    font-family:var(--grotesk); font-size:clamp(1.8rem,4vw,2.6rem); font-weight:600;
+    max-width:16ch; line-height:1.1; margin-bottom:20px;
+  }
+  .contact-links{ display:flex; flex-direction:column; gap:10px; font-family:var(--mono); font-size:14px; }
+  .contact-links a{ color:var(--text-dim); border-bottom:1px solid transparent; transition:color .2s, border-color .2s; }
+  .contact-links a:hover{ color:var(--text); border-color:var(--text-faint); }
+  .btn-primary{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--accent); color:var(--text-inverse); font-family:var(--mono); font-size:13px; font-weight:500;
+    padding:11px 20px; border-radius:6px; transition:transform .15s, box-shadow .2s;
+    margin-top:8px;
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(59,130,246,0.25); }
+
+  footer{
+    position:relative; z-index:10;
+    padding:24px 32px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--text-faint);
+  }
+
+  @media (max-width:720px){
+    header{padding:18px 22px;}
+    main{padding:110px 22px 80px;}
+    .section{margin-bottom:72px;}
+    .projects-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><a href="index.html">agustin.top</a></div>
+  <nav class="links">
+    <a href="index.html#proof">WORK</a>
+    <a href="index.html#understand">AI</a>
+    <a href="about.html">ABOUT</a>
+  </nav>
+  <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="mobile-menu" id="mobile-menu">
+  <button class="mobile-close" id="mobile-close" aria-label="Close menu">×</button>
+  <nav class="mobile-links">
+    <a href="index.html#proof">WORK</a>
+    <a href="index.html#understand">AI</a>
+    <a href="about.html">ABOUT</a>
+  </nav>
+</div>
+
+<main>
+  <section class="hero reveal" style="animation-delay:0ms">
+    <div class="hero-label">About</div>
+    <h1 class="hero-name">Agustín Avellaneda</h1>
+    <p class="hero-title">AI-Powered Fullstack Developer &amp; PM</p>
+    <p class="hero-bio">
+      Ingeniero y product builder con foco en transformar ideas en productos digitales concretos.
+      Combino desarrollo fullstack, inteligencia artificial y pensamiento de producto para shippear
+      MVPs rápidos, medibles y orientados a valor real. He liderado productos desde cero en
+      SaaS, fintech, marketplaces y automatización.
+    </p>
+    <div class="hero-links">
+      <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://linkedin.com/in/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="mailto:hola@agustin.top">hola@agustin.top</a>
+    </div>
+  </section>
+
+  <section class="section reveal" style="animation-delay:80ms">
+    <div class="sect-head">
+      <span class="sect-num">01 / 04</span>
+      <h2 class="sect-title">Experience</h2>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-date">2022 — Present</div>
+        <div class="timeline-role">Independent Product Engineer</div>
+        <div class="timeline-company">agustin.top</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">2019 — 2022</div>
+        <div class="timeline-role">Senior Fullstack Engineer</div>
+        <div class="timeline-company">SaaS Studio</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">2016 — 2019</div>
+        <div class="timeline-role">Product Developer</div>
+        <div class="timeline-company">Digital Agency</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">2012 — 2016</div>
+        <div class="timeline-role">Software Engineering</div>
+        <div class="timeline-company">University</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" style="animation-delay:160ms">
+    <div class="sect-head">
+      <span class="sect-num">02 / 04</span>
+      <h2 class="sect-title">Projects</h2>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card">
+        <div class="project-title">Runmate</div>
+        <div class="project-meta">Social · Platform</div>
+        <div class="project-desc">App de matching para runners: perfiles, eventos y recomendaciones basadas en ritmo y ubicación.</div>
+      </div>
+      <div class="project-card">
+        <div class="project-title">Ledgerly</div>
+        <div class="project-meta">Fintech · SaaS</div>
+        <div class="project-desc">Panel de conciliación financiera automatizado para pymes, con reglas configurables.</div>
+      </div>
+      <div class="project-card">
+        <div class="project-title">Opsly</div>
+        <div class="project-meta">Automation · Tool</div>
+        <div class="project-desc">Orquestador de tareas internas que conecta APIs sin código para equipos de operaciones.</div>
+      </div>
+      <div class="project-card">
+        <div class="project-title">Marketspace</div>
+        <div class="project-meta">Platforms · Platform</div>
+        <div class="project-desc">Marketplace vertical con búsqueda semántica y matching comprador-vendedor.</div>
+      </div>
+      <div class="project-card">
+        <div class="project-title">Cohort</div>
+        <div class="project-meta">SaaS · SaaS</div>
+        <div class="project-desc">Herramienta de analítica de producto enfocada en retención por cohortes.</div>
+      </div>
+      <div class="project-card">
+        <div class="project-title">Fieldnote</div>
+        <div class="project-meta">Social · App</div>
+        <div class="project-desc">Red social de nicho para compartir notas de campo entre profesionales.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" style="animation-delay:240ms">
+    <div class="sect-head">
+      <span class="sect-num">03 / 04</span>
+      <h2 class="sect-title">Skills &amp; Stack</h2>
+    </div>
+    <div class="skills">
+      <span class="skill-chip">TypeScript</span>
+      <span class="skill-chip">Node.js</span>
+      <span class="skill-chip">React</span>
+      <span class="skill-chip">LLMs</span>
+      <span class="skill-chip">Agents</span>
+      <span class="skill-chip">RAG</span>
+      <span class="skill-chip">Automation</span>
+      <span class="skill-chip">Open Source</span>
+      <span class="skill-chip">Lexis-Two</span>
+    </div>
+  </section>
+
+  <section class="section reveal" style="animation-delay:320ms">
+    <div class="sect-head">
+      <span class="sect-num">04 / 04</span>
+      <h2 class="sect-title">Contact</h2>
+    </div>
+    <p class="contact-cta">Let's build something useful.</p>
+    <div class="contact-links">
+      <a href="mailto:hola@agustin.top">hola@agustin.top</a>
+      <a href="index.html">← Back to orbit</a>
+    </div>
+    <a class="btn-primary" href="mailto:hola@agustin.top">Send an email</a>
+  </section>
+</main>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="grain"></div>
+
+<footer>
+  <span>agustin.top</span>
+  <span>© 2026</span>
+</footer>
+
+<script>
+(function(){
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileClose = document.getElementById('mobile-close');
+  if(!hamburger || !mobileMenu) return;
+  function open(){ mobileMenu.classList.add('show'); hamburger.setAttribute('aria-expanded','true'); document.documentElement.classList.add('locked'); }
+  function close(){ mobileMenu.classList.remove('show'); hamburger.setAttribute('aria-expanded','false'); document.documentElement.classList.remove('locked'); }
+  hamburger.addEventListener('click', open);
+  mobileClose.addEventListener('click', close);
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => { close(); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+---
+import type { Locale } from "../../i18n/ui";
+import { ui } from "../../i18n/ui";
+import { getTurnstileSiteKey } from "../../lib/contact/turnstile";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale].contact;
+const turnstileSiteKey = getTurnstileSiteKey();
+const totalSteps = 3;
+const fieldClass =
+  "w-full min-h-11 rounded-md border border-gray-300 px-3 py-2.5 text-base focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900";
+---
+
+<section id="contact" class="py-20 px-4 bg-gray-50">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">{t.title}</h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">{t.subtitle}</p>
+    </div>
+
+    <div class="reveal border border-gray-200 rounded-lg shadow-sm bg-white">
+      <div class="p-6 sm:p-8">
+        <form id="contact-form" class="relative">
+          <div aria-hidden="true" class="sr-only-honeypot">
+            <label for="website">Website</label>
+            <input id="website" type="text" name="website" tabindex="-1" autocomplete="off" />
+            <label for="company">Company</label>
+            <input id="company" type="text" name="company" tabindex="-1" autocomplete="off" />
+          </div>
+          <input type="hidden" name="formToken" id="formToken" value="" />
+          <input type="hidden" name="language" value={locale} />
+
+          <div class="mb-8">
+            <p
+              id="contact-step-label"
+              class="text-sm font-medium text-gray-500 mb-3"
+              aria-live="polite"
+            >
+              {t.steps.progress.replace("{current}", "1").replace("{total}", String(totalSteps))}
+            </p>
+            <div class="flex gap-2" role="progressbar" aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={1}>
+              {
+                Array.from({ length: totalSteps }, (_, i) => (
+                  <div
+                    class:list={[
+                      "contact-step-bar h-1.5 flex-1 rounded-full transition-colors duration-300",
+                      i === 0 ? "bg-gray-900" : "bg-gray-200",
+                    ]}
+                    data-step-bar={i + 1}
+                  />
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="contact-step space-y-6" data-step="1">
+            <h3 class="text-lg font-semibold text-gray-900">{t.steps.step1}</h3>
+            <div class="grid sm:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label for="fullname" class="text-gray-900 font-medium">{t.fields.fullname}</label>
+                <input
+                  type="text"
+                  id="fullname"
+                  name="fullname"
+                  required
+                  minlength="8"
+                  class={fieldClass}
+                  placeholder={t.fields.fullnamePlaceholder}
+                />
+              </div>
+              <div class="space-y-2">
+                <label for="email" class="text-gray-900 font-medium">{t.fields.email}</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  class={fieldClass}
+                  placeholder={t.fields.emailPlaceholder}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-step hidden space-y-6" data-step="2">
+            <h3 class="text-lg font-semibold text-gray-900">{t.steps.step2}</h3>
+            <div class="space-y-2">
+              <label for="necesidad" class="text-gray-900 font-medium">{t.fields.necesidad}</label>
+              <select id="necesidad" name="necesidad" required class={`${fieldClass} bg-white`}>
+                <option value="" disabled selected>{t.fields.selectPlaceholder}</option>
+                {t.options.necesidad.map((o) => <option value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label for="presupuesto" class="text-gray-900 font-medium">{t.fields.presupuesto}</label>
+              <select id="presupuesto" name="presupuesto" required class={`${fieldClass} bg-white`}>
+                <option value="" disabled selected>{t.fields.selectPlaceholder}</option>
+                {t.options.presupuesto.map((o) => <option value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label for="urgencia" class="text-gray-900 font-medium">{t.fields.urgencia}</label>
+              <select id="urgencia" name="urgencia" required class={`${fieldClass} bg-white`}>
+                <option value="" disabled selected>{t.fields.selectPlaceholder}</option>
+                {t.options.urgencia.map((o) => <option value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label for="decision" class="text-gray-900 font-medium">{t.fields.decision}</label>
+              <select id="decision" name="decision" required class={`${fieldClass} bg-white`}>
+                <option value="" disabled selected>{t.fields.selectPlaceholder}</option>
+                {t.options.decision.map((o) => <option value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div class="contact-step hidden space-y-6" data-step="3">
+            <h3 class="text-lg font-semibold text-gray-900">{t.steps.step3}</h3>
+            <div class="space-y-2">
+              <label for="message" class="text-gray-900 font-medium">{t.fields.message}</label>
+              <textarea
+                id="message"
+                name="message"
+                rows={4}
+                class={`${fieldClass} min-h-[120px] resize-y`}
+                placeholder={t.fields.messagePlaceholder}
+              />
+            </div>
+
+            {
+              turnstileSiteKey && (
+                <div
+                  class="cf-turnstile"
+                  data-sitekey={turnstileSiteKey}
+                  data-theme="light"
+                  data-language={locale}
+                />
+              )
+            }
+          </div>
+
+          <div id="contact-error" class="hidden mt-6 rounded-md bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm" role="alert"></div>
+
+          <div class="mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+            <button
+              type="button"
+              id="contact-back"
+              class="hidden min-h-11 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-3 transition-colors"
+            >
+              {t.steps.back}
+            </button>
+            <button
+              type="button"
+              id="contact-next"
+              class="min-h-11 flex-1 inline-flex items-center justify-center rounded-md bg-gray-900 text-white hover:bg-gray-800 font-semibold px-8 py-3 transition-colors"
+            >
+              {t.steps.next}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <button
+              type="submit"
+              id="contact-submit"
+              class="hidden min-h-11 flex-1 items-center justify-center rounded-md bg-gray-900 text-white hover:bg-gray-800 font-semibold px-8 py-3 transition-colors disabled:opacity-60"
+            >
+              <span id="contact-submit-label">{t.submit}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dialog id="contact-success-dialog" class="rounded-lg shadow-xl border border-gray-200 p-0 max-w-md w-[calc(100%-2rem)] backdrop:bg-black/50">
+  <div class="p-6 text-center">
+    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+    </div>
+    <h2 class="text-xl font-semibold text-gray-900 mb-2">{t.success.title}</h2>
+    <p class="text-base text-gray-600 mb-6">{t.success.description}</p>
+    <button type="button" id="contact-success-close" class="min-h-11 rounded-md bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 font-medium">
+      {t.success.close}
+    </button>
+  </div>
+</dialog>
+
+{turnstileSiteKey && (
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+)}
+
+<script define:vars={{ locale, errors: t.errors, labels: { submit: t.submit, submitting: t.submitting, next: t.steps.next, back: t.steps.back, progress: t.steps.progress }, turnstileEnabled: Boolean(turnstileSiteKey), totalSteps }}>
+  const form = document.getElementById("contact-form");
+  const tokenInput = document.getElementById("formToken");
+  const errorRegion = document.getElementById("contact-error");
+  const submitBtn = document.getElementById("contact-submit");
+  const submitLabel = document.getElementById("contact-submit-label");
+  const nextBtn = document.getElementById("contact-next");
+  const backBtn = document.getElementById("contact-back");
+  const stepLabel = document.getElementById("contact-step-label");
+  const stepBars = document.querySelectorAll(".contact-step-bar");
+  const stepPanels = document.querySelectorAll(".contact-step");
+  const successDialog = document.getElementById("contact-success-dialog");
+  const successClose = document.getElementById("contact-success-close");
+  const progressBar = document.querySelector('[role="progressbar"]');
+
+  let currentStep = 1;
+
+  async function refreshFormToken() {
+    if (!tokenInput) return;
+    try {
+      const res = await fetch("/api/contact-token", { method: "GET" });
+      const data = await res.json();
+      if (!res.ok || !data.token) {
+        tokenInput.value = "";
+        return;
+      }
+      tokenInput.value = data.token;
+    } catch {
+      tokenInput.value = "";
+    }
+  }
+
+  refreshFormToken();
+
+  function showError(message) {
+    if (!errorRegion) return;
+    errorRegion.textContent = message;
+    errorRegion.classList.remove("hidden");
+  }
+
+  function hideError() {
+    errorRegion?.classList.add("hidden");
+  }
+
+  function mapError(code, message) {
+    switch (code) {
+      case "spam":
+        return errors.spam;
+      case "too_fast":
+        return errors.tooFast;
+      case "expired":
+        return errors.expired;
+      case "captcha":
+        return errors.captcha;
+      case "rate_limit":
+        return errors.rateLimit;
+      case "validation":
+        return message || errors.validation;
+      default:
+        return message || errors.send;
+    }
+  }
+
+  function getTurnstileToken() {
+    if (!turnstileEnabled) return "";
+    const input = form?.querySelector('[name="cf-turnstile-response"]');
+    if (input && input.value) return input.value;
+    if (window.turnstile) {
+      const widget = form?.querySelector(".cf-turnstile");
+      if (widget) return window.turnstile.getResponse(widget) || "";
+    }
+    return "";
+  }
+
+  function resetTurnstile() {
+    if (!turnstileEnabled || !window.turnstile) return;
+    const widget = form?.querySelector(".cf-turnstile");
+    if (widget) window.turnstile.reset(widget);
+  }
+
+  function getCurrentPanel() {
+    return form?.querySelector(`.contact-step[data-step="${currentStep}"]`);
+  }
+
+  function validateCurrentStep() {
+    const panel = getCurrentPanel();
+    if (!panel) return true;
+    const fields = panel.querySelectorAll("input, select, textarea");
+    for (const field of fields) {
+      if (!field.checkValidity()) {
+        field.reportValidity();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /** Toggle visibility without fighting Tailwind `hidden` vs `inline-flex`. */
+  function setActionVisible(btn, visible) {
+    if (!btn) return;
+    btn.classList.toggle("hidden", !visible);
+    btn.classList.toggle("inline-flex", visible);
+  }
+
+  function updateStepUI() {
+    stepPanels.forEach((panel) => {
+      const step = Number(panel.dataset.step);
+      panel.classList.toggle("hidden", step !== currentStep);
+    });
+
+    stepBars.forEach((bar) => {
+      const step = Number(bar.dataset.stepBar);
+      bar.classList.toggle("bg-gray-900", step <= currentStep);
+      bar.classList.toggle("bg-gray-200", step > currentStep);
+    });
+
+    if (stepLabel) {
+      stepLabel.textContent = labels.progress
+        .replace("{current}", String(currentStep))
+        .replace("{total}", String(totalSteps));
+    }
+
+    if (progressBar) {
+      progressBar.setAttribute("aria-valuenow", String(currentStep));
+    }
+
+    const isLast = currentStep === totalSteps;
+    setActionVisible(backBtn, currentStep > 1);
+    setActionVisible(nextBtn, !isLast);
+    setActionVisible(submitBtn, isLast);
+  }
+
+  function goToStep(step) {
+    currentStep = Math.min(Math.max(step, 1), totalSteps);
+    hideError();
+    updateStepUI();
+  }
+
+  nextBtn?.addEventListener("click", () => {
+    if (!validateCurrentStep()) return;
+    goToStep(currentStep + 1);
+  });
+
+  backBtn?.addEventListener("click", () => {
+    goToStep(currentStep - 1);
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideError();
+
+    if (currentStep !== totalSteps) {
+      if (validateCurrentStep()) goToStep(currentStep + 1);
+      return;
+    }
+
+    if (!validateCurrentStep()) return;
+
+    if (!tokenInput?.value) {
+      await refreshFormToken();
+    }
+
+    if (!tokenInput?.value) {
+      showError(errors.send);
+      return;
+    }
+
+    if (turnstileEnabled && !getTurnstileToken()) {
+      showError(errors.captcha);
+      return;
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    if (submitLabel) submitLabel.textContent = labels.submitting;
+
+    const fd = new FormData(form);
+    const payload = {
+      fullname: fd.get("fullname"),
+      email: fd.get("email"),
+      necesidad: fd.get("necesidad"),
+      presupuesto: fd.get("presupuesto"),
+      urgencia: fd.get("urgencia"),
+      decision: fd.get("decision"),
+      message: fd.get("message") || "",
+      language: locale,
+      honeypot: fd.get("website") || "",
+      honeypotCompany: fd.get("company") || "",
+      formToken: fd.get("formToken") || "",
+      turnstileToken: getTurnstileToken(),
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json();
+      if (result.success) {
+        form.reset();
+        resetTurnstile();
+        refreshFormToken();
+        goToStep(1);
+        successDialog?.showModal();
+      } else {
+        showError(mapError(result.error, result.message));
+        resetTurnstile();
+      }
+    } catch {
+      showError(errors.send);
+      resetTurnstile();
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+      if (nextBtn) nextBtn.disabled = false;
+      if (submitLabel) submitLabel.textContent = labels.submit;
+    }
+  });
+
+  successClose?.addEventListener("click", () => successDialog?.close());
+  successDialog?.addEventListener("click", (e) => {
+    if (e.target === successDialog) successDialog.close();
+  });
+
+  updateStepUI();
+</script>

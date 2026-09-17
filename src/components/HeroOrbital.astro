@@ -1,0 +1,1274 @@
+---
+import type { Locale } from "../i18n/ui";
+import { ui } from "../i18n/ui";
+import { CONCEPTS, NODE_DATA, NODE_ENRICHMENT, type NodeKey } from "../data/nodes";
+import { getNodeProjects, CATEGORIES, decomposeIdea, matchProjects, STEP_TEMPLATES } from "../data/idea";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = ui[locale].orbital;
+const n = ui[locale].narrative;
+const PROJECTS = getNodeProjects(locale);
+---
+
+<section id="hero" class="hero-section">
+  <canvas id="graph-canvas"></canvas>
+  <div class="focus-ring" id="focus-ring"></div>
+
+  <div class="hero-inner">
+    <div class="status-strip">
+      {t.statusStrip.map((s) => <span><i class="dot pulse"></i> {s}</span>)}
+    </div>
+    <div class="hero-name">{ui[locale].hero.name}</div>
+    <h1 class="headline">
+      <span class="line"><span>{t.headline1}</span></span>
+      <span class="line"><span>{t.headline2}</span></span>
+    </h1>
+    <p class="sub">{t.sub}</p>
+
+    <form class="cmdbar" id="cmd-form">
+      <div class="cmdbar-shell" id="cmdbar-shell">
+        <span class="cmdbar-icon">&gt;</span>
+        <textarea id="cmd-input" placeholder={t.cmdbarPlaceholder} rows="1" autocomplete="off"></textarea>
+        <button type="submit" class="cmdbar-send glow-accent" aria-label="Send">↵</button>
+      </div>
+    </form>
+
+    <div class="cmdbar-modal" id="cmdbar-modal" aria-hidden="true">
+      <button class="cmdbar-modal-close" id="cmdbar-modal-close" type="button">{t.closeBtn}</button>
+      <div class="cmdbar-modal-shell" id="cmdbar-modal-shell">
+        <textarea id="cmd-modal-input" placeholder={t.modalPlaceholder} autocomplete="off"></textarea>
+        <div class="cmdbar-modal-hint">
+          <span>{t.modalHint}</span>
+          <button type="button" class="btn-primary" id="cmdbar-modal-send">{t.modalAnalyze}</button>
+        </div>
+        <div class="cmdbar-modal-powered">
+          <span>Powered by</span>
+          <a href="https://flowfolio.space" target="_blank" rel="noopener"><img src="/images/flowfolio-logo.webp" alt="Flowfolio" width="72" height="20" loading="lazy" /> Flowfolio</a>
+        </div>
+        <div class="cmdbar-modal-loading" id="cmdbar-modal-loading" aria-hidden="true">
+          <div class="ai-thinking" aria-hidden="true">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          </div>
+          <div class="cmdbar-modal-loading-text">{t.thinking}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-readout hidden" id="ai-readout">
+      <div class="ai-thinking" aria-hidden="true">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <span id="ai-readout-text">{t.thinking}</span>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-label" id="result-label">ANALYSIS COMPLETE</div>
+      <div class="result-chips" id="result-chips"></div>
+      <div class="result-projects" id="result-projects"></div>
+    </div>
+  </div>
+
+  <aside class="node-panel" id="node-panel" aria-hidden="true">
+    <button class="back-btn" id="back-to-orbit" aria-label={t.backToOrbit}>{t.backToOrbit}</button>
+    <div class="node-panel-header">
+      <h2 class="node-panel-title" id="np-title">AI</h2>
+      <span class="node-panel-tag" id="np-tag">CAPABILITY</span>
+    </div>
+    <p class="node-panel-desc" id="np-desc"></p>
+    <div class="node-panel-chips" id="np-chips"></div>
+    <div class="node-content" id="np-content"></div>
+    <button class="node-more-link" id="np-more" type="button">{t.learnMore} →</button>
+    <div class="node-idea-view" id="node-idea-view">
+      <div class="node-idea-form" id="node-idea-form">
+        <p class="hint" id="np-hint">{t.ideaHint}</p>
+        <textarea id="node-idea-input" placeholder={t.cmdbarPlaceholder} rows="3"></textarea>
+        <div class="node-idea-actions">
+          <button class="btn-primary" id="node-idea-submit" type="button">{t.analyzeBtn}</button>
+          <button class="btn-secondary" id="node-idea-back" type="button">{t.backBtn}</button>
+        </div>
+      </div>
+      <div class="ai-result" id="ai-result">
+        <div class="ai-result-label" id="ai-result-label">IDEA PULIDA</div>
+        <div class="ai-result-section-title" id="ai-result-pitch-title">Pitch recomendado</div>
+        <div class="ai-result-pitch" id="ai-result-pitch"></div>
+        <div class="ai-result-section">
+          <h4>Componentes inferidos</h4>
+          <div class="ai-result-chips" id="ai-result-chips"></div>
+        </div>
+        <div class="ai-result-section">
+          <h4>Próximos pasos recomendados</h4>
+          <ul class="ai-result-list" id="ai-result-steps"></ul>
+        </div>
+        <div class="ai-result-actions">
+          <button class="btn-primary" id="ai-send-link" type="button">{t.analyzeBtn}</button>
+          <button class="btn-secondary" id="ai-new-idea" type="button">{t.newIdea}</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="node-detail" id="node-detail" aria-hidden="true">
+    <div class="node-detail-inner">
+      <button class="node-detail-back" id="node-detail-back" type="button">{t.nodeDetailClose} ←</button>
+      <div class="node-detail-header">
+        <h2 class="node-detail-title" id="nd-title"></h2>
+        <span class="node-detail-tag" id="nd-tag"></span>
+      </div>
+      <div class="node-detail-image" id="nd-image"></div>
+      <p class="node-detail-intro" id="nd-intro"></p>
+      <div class="node-detail-sections" id="nd-sections"></div>
+      <div class="node-detail-links" id="nd-links"></div>
+      <div class="node-detail-carousel" id="nd-carousel"></div>
+    </div>
+  </div>
+
+  <div class="hero-controls">
+    <b>{t.controlsHint}</b><br>
+    <b>{t.controlsHint2}</b>
+  </div>
+  <div class="exit-progress" id="exit-progress"></div>
+  <button class="skip-btn glow-accent" id="skip-btn">{t.skipBtn}</button>
+  <div class="onboarding-hint" id="onboarding-hint">{t.onboardingHint}</div>
+  <div class="node-tooltip" id="node-tooltip">
+    <span class="nt-title" id="nt-title"></span>
+    <span class="nt-tag" id="nt-tag"></span>
+    <span class="nt-preview" id="nt-preview"></span>
+  </div>
+  <div class="node-dots" id="node-dots"></div>
+  <div class="telemetry" id="telemetry">
+    <div class="row">{t.telemetryNodes} <span class="v" id="tm-nodes">152</span></div>
+    <div class="row">{t.telemetrySync} <span class="v" id="tm-sync">100%</span></div>
+    <div class="row">{t.telemetryLatency} <span class="v" id="tm-latency">18ms</span></div>
+  </div>
+</section>
+
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script is:inline defer define:vars={{ locale, CONCEPTS_JSON: JSON.stringify(CONCEPTS), NODE_DATA_JSON: JSON.stringify(NODE_DATA), NODE_ENRICHMENT_JSON: JSON.stringify(NODE_ENRICHMENT), PROJECTS_JSON: JSON.stringify(PROJECTS), CATEGORIES_JSON: JSON.stringify(CATEGORIES), STEP_TEMPLATES_JSON: JSON.stringify(STEP_TEMPLATES) }}>
+(function() {
+  const CONCEPTS = JSON.parse(CONCEPTS_JSON);
+  const NODE_DATA = JSON.parse(NODE_DATA_JSON);
+  const NODE_ENRICHMENT = JSON.parse(NODE_ENRICHMENT_JSON);
+  const PROJECTS = JSON.parse(PROJECTS_JSON);
+  const CATEGORIES = JSON.parse(CATEGORIES_JSON);
+  const STEP_TEMPLATES = JSON.parse(STEP_TEMPLATES_JSON);
+  const currentLocale = locale;
+
+  document.documentElement.classList.add('locked');
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function getText(val) {
+    if (val && typeof val === 'object') {
+      if (val[currentLocale]) return val[currentLocale];
+      if (val.es) return val.es;
+    }
+    return val || '';
+  }
+
+  function decomposeIdea(text) {
+    const dict = [
+      { match: /runn|carrera|marató/i, tags: ['USERS','EVENTS','PROFILES','MATCHING','PLATFORM'] },
+      { match: /pago|fintech|banc|finan/i, tags: ['USERS','PAYMENTS','LEDGER','COMPLIANCE','DASHBOARD'] },
+      { match: /marketplace|tienda|ecommerce|vender/i, tags: ['USERS','LISTINGS','SEARCH','TRANSACTIONS','PLATFORM'] },
+      { match: /social|comunidad|red/i, tags: ['USERS','CONTENT','FEED','INTERACTIONS','PLATFORM'] },
+      { match: /automat|workflow|integrac/i, tags: ['TRIGGERS','RULES','INTEGRATIONS','ACTIONS','MONITORING'] },
+    ];
+    const hit = dict.find(d => d.match.test(text));
+    return hit ? hit.tags : ['USERS','DATA','LOGIC','INTERFACE','PLATFORM'];
+  }
+
+  function matchProjectsLocal(text, tags) {
+    const lower = text.toLowerCase();
+    let matches = PROJECTS.filter(p =>
+      p.tags.some(t => lower.includes(t)) ||
+      tags.some(tag => p.tags.includes(tag.toLowerCase()))
+    );
+    if (matches.length === 0) matches = shuffle(PROJECTS);
+    else matches = shuffle(matches);
+    return matches.slice(0,3);
+  }
+
+  function generateMvp(text, tags) {
+    const lower = text.toLowerCase();
+    const bullets = [];
+    if (/app|mobile|ios|android/.test(lower)) bullets.push('A focused mobile app that lets users complete the core action in under 60 seconds.');
+    else if (/platform|marketplace|saas|b2b/.test(lower)) bullets.push('A web dashboard where each side of the marketplace can list, search, and manage its core objects.');
+    else bullets.push('A clean web interface that lets users perform the one action the idea promises.');
+    if (/user|profile|auth|login|sign up/.test(lower) || tags.includes('USERS')) bullets.push('Simple sign-up and profile setup so the system can personalize the experience from day one.');
+    else bullets.push('A lightweight data model that captures the inputs needed to deliver value.');
+    if (/payment|pay|subscription|buy|sell|transaction/.test(lower) || tags.includes('PAYMENTS') || tags.includes('TRANSACTIONS')) bullets.push('A basic payment or transaction flow with clear confirmation and history.');
+    else if (/search|find|match|filter/.test(lower) || tags.includes('SEARCH') || tags.includes('MATCHING')) bullets.push('Search and filtering so users can find the right match in a growing catalog.');
+    else if (/content|post|feed|community/.test(lower) || tags.includes('CONTENT')) bullets.push('Content creation and a simple feed so early users can see activity immediately.');
+    else bullets.push('The smallest automation or workflow that removes the manual step users would otherwise do.');
+    bullets.push('Analytics, feedback capture, and an admin view to learn what to build next.');
+    return bullets.slice(0,4);
+  }
+
+  function generateNextSteps() {
+    return [
+      'Define the primary user and the one job they hire this product to do.',
+      'Map the smallest end-to-end flow that delivers value in the first session.',
+      'Build the prototype, test it with 5 real users, and capture feedback.',
+      'Iterate on the highest-friction step before adding any new feature.',
+    ];
+  }
+
+  /* ============ AI COMMAND BAR ============ */
+  var cmdForm = document.getElementById('cmd-form');
+  var cmdInput = document.getElementById('cmd-input');
+  var cmdModal = document.getElementById('cmdbar-modal');
+  var cmdModalInput = document.getElementById('cmd-modal-input');
+  var cmdModalClose = document.getElementById('cmdbar-modal-close');
+  var cmdModalSend = document.getElementById('cmdbar-modal-send');
+  var cmdModalShell = document.getElementById('cmdbar-modal-shell');
+  var analyzeTimeout = null;
+  var analyzeNavTimeout = null;
+  var isAnalyzing = false;
+
+  function cancelAnalysis() {
+    if (analyzeTimeout) { clearTimeout(analyzeTimeout); analyzeTimeout = null; }
+    if (analyzeNavTimeout) { clearTimeout(analyzeNavTimeout); analyzeNavTimeout = null; }
+    isAnalyzing = false;
+    if (cmdModalShell) cmdModalShell.classList.remove('loading');
+    if (cmdModalInput) cmdModalInput.disabled = false;
+    if (cmdModalSend) cmdModalSend.disabled = false;
+  }
+
+  function showCmdbarError(msg) {
+    var loadingText = cmdModalShell.querySelector('.cmdbar-modal-loading-text');
+    if (loadingText) loadingText.textContent = msg;
+    cmdModalShell.classList.add('loading');
+    setTimeout(function() {
+      cmdModalShell.classList.remove('loading');
+      if (loadingText) loadingText.textContent = currentLocale === 'es' ? 'Pensando...' : 'Thinking...';
+    }, 2500);
+  }
+
+  function openCmdbarModal() {
+    if (cmdModal.classList.contains('show')) return;
+    cmdModal.classList.add('show');
+    cmdModal.setAttribute('aria-hidden','false');
+    cmdModalInput.value = cmdInput.value;
+    document.documentElement.classList.add('locked');
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + window.scrollY + 'px';
+    document.body.style.width = '100%';
+    requestAnimationFrame(() => cmdModalInput.focus());
+  }
+
+  function closeCmdbarModal() {
+    if (isAnalyzing) cancelAnalysis();
+    cmdModal.classList.remove('show');
+    cmdModal.setAttribute('aria-hidden','true');
+    cmdInput.value = cmdModalInput.value;
+    var scrollY = document.body.style.top;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.documentElement.classList.remove('locked');
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  }
+
+  /* Prevent background scroll when modal is open */
+  cmdModal.addEventListener('touchmove', function(e) {
+    if (!cmdModal.classList.contains('show')) return;
+    var target = e.target;
+    var inShell = cmdModalShell.contains(target);
+    var inTextarea = target === cmdModalInput;
+    if (!inShell && !inTextarea) { e.preventDefault(); return; }
+    if (inTextarea) {
+      var el = target;
+      if (el.scrollHeight <= el.clientHeight) e.preventDefault();
+    }
+  }, { passive: false });
+
+  /* Block wheel events from reaching Three.js canvas when modal is open */
+  cmdModal.addEventListener('wheel', function(e) {
+    if (!cmdModal.classList.contains('show')) return;
+    e.stopPropagation();
+  }, { passive: true });
+
+  cmdInput.addEventListener('focus', openCmdbarModal);
+  cmdModalInput.addEventListener('input', () => { cmdInput.value = cmdModalInput.value; });
+  cmdModalInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); cmdForm.dispatchEvent(new Event('submit')); }
+    if (e.key === 'Escape') { e.preventDefault(); closeCmdbarModal(); }
+  });
+  cmdModalClose.addEventListener('click', closeCmdbarModal);
+  cmdModalSend.addEventListener('click', () => { cmdForm.dispatchEvent(new Event('submit')); });
+  cmdModal.addEventListener('click', (e) => { if (e.target === cmdModal && !cmdModalInput.value.trim()) closeCmdbarModal(); });
+
+  /* Local fallback when API is unreachable or rate-limited */
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(arr) { var a = arr.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = a[i]; a[i] = a[j]; a[j] = tmp; } return a; }
+
+  function generateFallbackAnalysis(text, lang) {
+    var lower = text.toLowerCase();
+    var verb = lower.match(/connect|track|manage|share|find|match|automate|build|launch/);
+    var v = verb ? verb[0] : (lang === 'es' ? 'construye' : 'builds');
+    var clean = text.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '');
+
+    var polishedEs = [
+      'Una plataforma que ' + v + ' ' + clean + ', diseñada para escalar con un enfoque lean y centrada en el usuario desde el primer día.',
+      'Una solución digital para ' + clean + ', pensada para resolver un problema real con la herramienta más simple posible.',
+      'Un producto que ataca el problema de ' + clean + ', con una MVP rápida y un camino claro hacia la iteración.',
+    ];
+    var polishedEn = [
+      'A platform that ' + v + ' ' + clean + ', designed to scale with a lean approach and user-first from day one.',
+      'A digital solution for ' + clean + ', built to solve a real problem with the simplest possible tool.',
+      'A product tackling ' + clean + ', with a fast MVP and a clear path toward iteration.',
+    ];
+
+    var stepsEs = [
+      ['Validar la hipótesis central con 5 usuarios reales', 'Diseñar el flujo más simple que entregue valor', 'Construir un MVP funcional en 2-4 semanas', 'Lanzar a early adopters y capturar feedback', 'Iterar sobre el punto de mayor fricción antes de agregar features'],
+      ['Definir el problema central en una oración', 'Mapear el flujo del usuario de principio a fin', 'Prototipar la interfaz principal en 48 horas', 'Medir con métricas reales, no suposiciones', 'Decidir entre pivotar o perseverar según datos'],
+      ['Identificar al usuario ideal y su dolor más urgente', 'Reducir la idea a su acción nuclear', 'Construir solo lo que validó la hipótesis', 'Lanzar y observar, no asumir', 'Crecer solo cuando el core funciona'],
+    ];
+    var stepsEn = [
+      ['Validate the core hypothesis with 5 real users', 'Design the simplest flow that delivers value', 'Build a functional MVP in 2-4 weeks', 'Release to early adopters and capture feedback', 'Iterate on the highest-friction step before adding features'],
+      ['Define the core problem in one sentence', 'Map the user journey end to end', 'Prototype the main interface in 48 hours', 'Measure with real metrics, not assumptions', 'Decide whether to pivot or persevere based on data'],
+      ['Identify the ideal user and their most urgent pain point', 'Reduce the idea to its nuclear action', 'Build only what the hypothesis validated', 'Launch and observe, don\'t assume', 'Grow only when the core works'],
+    ];
+
+    var mvpEs = [
+      ['Interfaz web limpia que realice la acción principal en menos de 60 segundos', 'Sistema de autenticación simple con profiles básicos', 'Core logic optimizada para el caso de uso principal', 'Dashboard de analytics para medir engagement y iterar'],
+      ['Pantalla principal con la acción clave en primer plano', 'Onboarding guiado en 3 pasos', 'Backbone técnico simple (API + base de datos)', 'Loop de feedback integrado para el usuario'],
+      ['Landing funcional con CTA claro', 'Módulo central que ejecuta la promesa del producto', 'Gestión básica de usuarios', 'Panel de métricas para tomar decisiones'],
+    ];
+    var mvpEn = [
+      ['Clean web interface that completes the core action in under 60 seconds', 'Simple authentication system with basic profiles', 'Core logic optimized for the primary use case', 'Analytics dashboard to measure engagement and iterate'],
+      ['Main screen with the key action front and center', '3-step guided onboarding', 'Simple technical backbone (API + database)', 'Built-in feedback loop for the user'],
+      ['Functional landing page with clear CTA', 'Core module that delivers the product promise', 'Basic user management', 'Metrics panel for decision-making'],
+    ];
+
+    return {
+      idea: pick(lang === 'es' ? polishedEs : polishedEn),
+      steps: pick(lang === 'es' ? stepsEs : stepsEn),
+      mvp: pick(lang === 'es' ? mvpEs : mvpEn),
+    };
+  }
+
+  cmdForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    var val = cmdInput.value.trim();
+    if (!val || isAnalyzing) return;
+
+    /* --- Client-side validation --- */
+    if (val.length < 3) { showCmdbarError(currentLocale === 'es' ? 'La idea es muy corta. Describila un poco más.' : 'The idea is too short. Describe it a bit more.'); return; }
+    if (val.length > 2000) { showCmdbarError(currentLocale === 'es' ? 'La idea es muy larga. Resumila en 2000 caracteres.' : 'The idea is too long. Summarize it in 2000 characters.'); return; }
+    var injectionRe = /ignore\s+(all\s+)?(previous|prior|above)|disregard\s+(all\s+)?(previous|prior)|you\s+are\s+now\s+(a|an)|act\s+as\s+(a|an)\s+(different|new)|from\s+now\s+on\s+(you\s+)?(will|must|are)|pretend\s+(you\s+)?(are|to\s+be)/i;
+    if (injectionRe.test(val)) { showCmdbarError(currentLocale === 'es' ? 'Entrada no válida. Describí una idea de proyecto.' : 'Invalid input. Describe a project idea.'); return; }
+    var offTopicRe = /what\s+(model|ai|llm|gpt|claude)\s+are\s+you|who\s+(made|created|built)\s+you|write\s+(me\s+)?(a\s+)?(poem|song|story)|tell\s+me\s+(a\s+)?joke|what\s+is\s+the\s+weather/i;
+    if (offTopicRe.test(val)) { showCmdbarError(currentLocale === 'es' ? 'Este analizador solo acepta ideas de proyectos.' : 'This analyzer only accepts project ideas.'); return; }
+    var wordCount = val.split(/\s+/).filter(function(w) { return /[a-zA-Záéíóúñ]/.test(w); }).length;
+    if (wordCount < 2) { showCmdbarError(currentLocale === 'es' ? 'Describí tu idea con un poco más de detalle.' : 'Describe your idea with a bit more detail.'); return; }
+    /* --- End client-side validation --- */
+
+    isAnalyzing = true;
+    cmdModalShell.classList.add('loading');
+    cmdModalInput.disabled = true;
+    cmdModalSend.disabled = true;
+
+    var tags = decomposeIdea(val);
+
+    /* --- Call /api/analyze proxy --- */
+    fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectIdea: val, language: currentLocale })
+    }).then(function(res) {
+      if (res.status === 429) {
+        throw new Error(currentLocale === 'es'
+          ? 'Límite de análisis alcanzado. Intentá de nuevo en unos minutos.'
+          : 'Analysis rate limit reached. Try again in a few minutes.');
+      }
+      return res.json();
+    }).then(function(result) {
+      if (!result.success) {
+        throw new Error(result.message || (currentLocale === 'es' ? 'No se pudo analizar la idea.' : 'Could not analyze the idea.'));
+      }
+      var data = result.data;
+      var projects = matchProjectsLocal(val, tags);
+
+      sessionStorage.setItem('agustinIdeaAnalysis', JSON.stringify({
+        idea: val,
+        tags: tags,
+        source: 'api',
+        polishedIdea: data.polishedIdea || data.idea || '',
+        steps: data.steps || [],
+        mvp: data.mvp || [],
+        projects: projects.map(function(p) { return { id: p.id, title: p.title, category: p.category, type: p.type, slug: p.slug }; })
+      }));
+      var veil = document.getElementById('transition-veil');
+      if (veil) veil.classList.add('show');
+      setTimeout(function() {
+        window.location.href = '/' + currentLocale + '/analysis';
+      }, 500);
+    }).catch(function(err) {
+      /* Fallback: generate local analysis if API is unreachable */
+      var msg = err.message || '';
+      var isRateLimit = msg.includes('rate limit') || msg.includes('límite');
+      var fallback = generateFallbackAnalysis(val, currentLocale);
+      var projects = matchProjectsLocal(val, tags);
+
+      sessionStorage.setItem('agustinIdeaAnalysis', JSON.stringify({
+        idea: val,
+        tags: tags,
+        source: isRateLimit ? 'rate_limit' : 'fallback',
+        polishedIdea: fallback.idea,
+        steps: fallback.steps,
+        mvp: fallback.mvp,
+        projects: projects.map(function(p) { return { id: p.id, title: p.title, category: p.category, type: p.type, slug: p.slug }; })
+      }));
+      var veil = document.getElementById('transition-veil');
+      if (veil) veil.classList.add('show');
+      setTimeout(function() {
+        window.location.href = '/' + currentLocale + '/analysis';
+      }, 500);
+    });
+  });
+
+  /* ============ MOBILE MENU ============ */
+  var hamburger = document.getElementById('hamburger');
+  var mobileMenu = document.getElementById('mobile-menu');
+  var mobileClose = document.getElementById('mobile-close');
+  if (hamburger && mobileMenu) {
+    function openMobile() { mobileMenu.classList.add('show'); hamburger.setAttribute('aria-expanded','true'); document.documentElement.classList.add('locked'); }
+    function closeMobile() { mobileMenu.classList.remove('show'); hamburger.setAttribute('aria-expanded','false'); document.documentElement.classList.remove('locked'); }
+    hamburger.addEventListener('click', openMobile);
+    if (mobileClose) mobileClose.addEventListener('click', closeMobile);
+    mobileMenu.querySelectorAll('a[data-nav]').forEach(function(a) {
+      a.addEventListener('click', function(e) { e.preventDefault(); closeMobile(); });
+    });
+  }
+
+  /* ============ ONBOARDING HINT ============ */
+  (function() {
+    var hint = document.getElementById('onboarding-hint');
+    if (!hint || localStorage.getItem('hero-onboarded') === '1') { if (hint) hint.style.display='none'; return; }
+    function dismiss() { hint.classList.add('dismissed'); localStorage.setItem('hero-onboarded','1'); setTimeout(function(){ hint.style.display='none'; }, 350); }
+    window.addEventListener('pointerdown', dismiss, {once:true});
+    window.addEventListener('keydown', dismiss, {once:true});
+    window.addEventListener('wheel', dismiss, {once:true});
+  })();
+
+  /* ============ TELEMETRY ============ */
+  (function() {
+    var nodesEl = document.getElementById('tm-nodes');
+    var syncEl = document.getElementById('tm-sync');
+    var latEl = document.getElementById('tm-latency');
+    if (!nodesEl) return;
+    setInterval(function() {
+      nodesEl.textContent = 148 + Math.floor(Math.random()*9);
+      syncEl.textContent = (98 + Math.random()*2).toFixed(1) + '%';
+      latEl.textContent = (12 + Math.floor(Math.random()*14)) + 'ms';
+    }, 1400);
+  })();
+
+  /* ============ THREE.JS AI CORE ============ */
+  (function() {
+    var canvas = document.getElementById('graph-canvas');
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var scene = new THREE.Scene();
+    // lexis: fog removed — alpha:true renders transparent, fog was fading nodes to dark on light theme
+    var camera = new THREE.PerspectiveCamera(50, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 15);
+    var isMobile = window.innerWidth < 640;
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha:true, antialias: !isMobile });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    function resize() {
+      var w = canvas.clientWidth, h = canvas.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var accent = new THREE.Color(0x3b82f6);
+    var dim = new THREE.Color(0x3a3b3e);
+    var white = new THREE.Color(0xffffff);
+    var group = new THREE.Group();
+    scene.add(group);
+
+    var hubCount = CONCEPTS.length;
+    var hubPositions = [];
+    for (var i=0;i<hubCount;i++) {
+      var phi = Math.acos(1 - 2*(i+0.5)/hubCount);
+      var theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      var r = 3.4;
+      hubPositions.push(new THREE.Vector3(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta), r*Math.cos(phi)));
+    }
+
+    var haloCanvas = document.createElement('canvas');
+    haloCanvas.width = haloCanvas.height = 128;
+    var hctx = haloCanvas.getContext('2d');
+    var grad = hctx.createRadialGradient(64,64,0,64,64,64);
+    grad.addColorStop(0, 'rgba(147,197,253,0.9)');
+    grad.addColorStop(0.4, 'rgba(59,130,246,0.35)');
+    grad.addColorStop(1, 'rgba(59,130,246,0)');
+    hctx.fillStyle = grad;
+    hctx.fillRect(0,0,128,128);
+    var haloTex = new THREE.CanvasTexture(haloCanvas);
+    var haloMat = new THREE.SpriteMaterial({ map: haloTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending });
+
+    var hubGeo = new THREE.SphereGeometry(0.09, 16, 16);
+    var hubMat = new THREE.MeshBasicMaterial({ color: accent });
+    var hubMeshes = hubPositions.map(function(pos) {
+      var m = new THREE.Mesh(hubGeo, hubMat);
+      m.position.copy(pos);
+      group.add(m);
+      var halo = new THREE.Sprite(haloMat.clone());
+      halo.scale.set(0.7,0.7,1);
+      halo.position.copy(pos);
+      group.add(halo);
+      m.userData.halo = halo;
+      return m;
+    });
+
+    var centerGeo = new THREE.SphereGeometry(0.06, 16, 16);
+    var centerMesh = new THREE.Mesh(centerGeo, new THREE.MeshBasicMaterial({color:0xffffff}));
+    group.add(centerMesh);
+    var centerHalo = new THREE.Sprite(haloMat.clone());
+    centerHalo.material.color = new THREE.Color(0xffffff);
+    centerHalo.scale.set(0.55,0.55,1);
+    group.add(centerHalo);
+
+    var lineMat = new THREE.LineBasicMaterial({ color: dim, transparent:true, opacity:0.5 });
+    hubPositions.forEach(function(pos) {
+      var geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), pos]);
+      group.add(new THREE.Line(geo, lineMat));
+    });
+    for (var i=0;i<hubCount;i++) {
+      var a = hubPositions[i], b = hubPositions[(i+1)%hubCount];
+      var geo = new THREE.BufferGeometry().setFromPoints([a,b]);
+      group.add(new THREE.Line(geo, lineMat));
+    }
+
+    var ringMat = new THREE.MeshBasicMaterial({ color: dim, transparent:true, opacity:0.10, side:THREE.DoubleSide });
+    var ringGroup = new THREE.Group();
+    var ringSeg = isMobile ? 40 : 80;
+    [3.9, 4.9, 6.0].forEach(function(r, i) {
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 8, ringSeg), ringMat);
+      ring.rotation.x = (i * 0.7);
+      ring.rotation.y = (i * 0.4);
+      ringGroup.add(ring);
+    });
+    group.add(ringGroup);
+
+    var gridGroup = new THREE.Group();
+    var gridMat = new THREE.LineBasicMaterial({ color: 0x2a2b2f, transparent:true, opacity:0.35 });
+    var gridSize = 14, gridDiv = isMobile ? 8 : 14;
+    for (var i=0;i<=gridDiv;i++) {
+      var p = -gridSize/2 + (gridSize/gridDiv)*i;
+      var g1 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p,0,-gridSize/2), new THREE.Vector3(p,0,gridSize/2)]);
+      gridGroup.add(new THREE.Line(g1, gridMat));
+      var g2 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-gridSize/2,0,p), new THREE.Vector3(gridSize/2,0,p)]);
+      gridGroup.add(new THREE.Line(g2, gridMat));
+    }
+    gridGroup.position.y = -3.6;
+    scene.add(gridGroup);
+
+    var AMBIENT = isMobile ? 30 : 90;
+    var ambientPositions = [];
+    for (var i=0;i<AMBIENT;i++) {
+      var ar = 2.2 + Math.random()*2.4;
+      var atheta = Math.random()*Math.PI*2;
+      var aphi = Math.acos(2*Math.random()-1);
+      ambientPositions.push(new THREE.Vector3(ar*Math.sin(aphi)*Math.cos(atheta), ar*Math.sin(aphi)*Math.sin(atheta), ar*Math.cos(aphi)));
+    }
+    var ambientGeo = new THREE.BufferGeometry();
+    ambientGeo.setFromPoints(ambientPositions);
+    var ambientMat = new THREE.PointsMaterial({ color: 0x9a9c9f, size:0.045, transparent:true, opacity:0.6 });
+    var ambientPoints = new THREE.Points(ambientGeo, ambientMat);
+    group.add(ambientPoints);
+
+    var ambLineMat = new THREE.LineBasicMaterial({ color: dim, transparent:true, opacity:0.22 });
+    for (var i=0;i<AMBIENT;i++) {
+      for (var j=i+1;j<AMBIENT;j++) {
+        if (ambientPositions[i].distanceTo(ambientPositions[j]) < 1.15 && Math.random() < 0.3) {
+          var lgeo = new THREE.BufferGeometry().setFromPoints([ambientPositions[i], ambientPositions[j]]);
+          group.add(new THREE.Line(lgeo, ambLineMat));
+        }
+      }
+    }
+
+    /* Label layer */
+    var labelLayer = document.createElement('div');
+    labelLayer.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:1;';
+    canvas.parentElement.appendChild(labelLayer);
+    var labelEls = CONCEPTS.map(function(key) {
+      var el = document.createElement('div');
+      var d = NODE_DATA[key];
+      el.textContent = d && d.title ? d.title[currentLocale] || key : key;
+      el.style.cssText = 'position:absolute; font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:0.04em; transform:translate(-50%,-50%); white-space:nowrap; transition:opacity .3s; text-shadow:0 1px 4px var(--color-bg), 0 0 12px var(--color-bg);';
+      labelLayer.appendChild(el);
+      return el;
+    });
+
+    function updateLabels() {
+      var rect = canvas.getBoundingClientRect();
+      hubPositions.forEach(function(pos, i) {
+        var v = pos.clone().applyMatrix4(group.matrixWorld).project(camera);
+        var x = (v.x * 0.5 + 0.5) * rect.width;
+        var y = (-v.y * 0.5 + 0.5) * rect.height;
+        var visible = v.z < 1;
+        labelEls[i].style.opacity = visible ? '1' : '0';
+        labelEls[i].style.left = x + 'px';
+        labelEls[i].style.top = (y - 14) + 'px';
+      });
+    }
+
+    /* Navigation state */
+    window.__heroMode = 'explore';
+    var mode = 'explore';
+    var selectedNodeIndex = -1;
+    var rafId = null;
+    var heroEl = document.getElementById('hero');
+    var nodePanel = document.getElementById('node-panel');
+    var focusRing = document.getElementById('focus-ring');
+    var cameraHome = new THREE.Vector3(0, 0, 15);
+    var cameraTargetPos = cameraHome.clone();
+    var cameraTargetLookAt = new THREE.Vector3(0, 0, 0);
+    var currentLookAt = new THREE.Vector3(0, 0, 0);
+    var hoverRotX = 0, hoverRotY = 0;
+    var dragRotX = 0, dragRotY = 0;
+    var isDragging = false, dragMoved = 0;
+    var keysDown = {};
+    var zoomZ = 9, zoomLocked = false;
+    var focusedIndex = -1;
+    var decomposeActive = false, decomposeTimer = null;
+
+    /* Drag orbit */
+    canvas.addEventListener('pointerdown', function(e) {
+      if (window.__heroMode !== 'explore' || mode !== 'explore') return;
+      isDragging = true; dragMoved = 0;
+      var dsx = e.clientX, dsy = e.clientY;
+      var dsrx = dragRotX, dsry = dragRotY;
+      function onmove(ev) {
+        var dx = ev.clientX - dsx, dy = ev.clientY - dsy;
+        dragMoved = Math.max(dragMoved, Math.abs(dx) + Math.abs(dy));
+        dragRotY = dsry + dx * 0.006;
+        dragRotX = Math.max(-0.9, Math.min(0.9, dsrx + dy * 0.004));
+      }
+      function onup() {
+        isDragging = false;
+        window.removeEventListener('pointermove', onmove);
+        window.removeEventListener('pointerup', onup);
+      }
+      window.addEventListener('pointermove', onmove);
+      window.addEventListener('pointerup', onup);
+    });
+
+    /* Keyboard */
+    window.addEventListener('keydown', function(e) {
+      if (cmdkOverlay.classList.contains('show')) return;
+      if (window.__heroMode === 'explore' && mode === 'explore' && !e.repeat) keysDown[e.key.toLowerCase()] = true;
+      if (e.key === 'Escape') {
+        if (mode !== 'explore') { e.preventDefault(); exitInspect(); }
+        else { focusedIndex = -1; }
+      }
+      if (window.__heroMode === 'explore' && mode === 'inspect' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        var dir = e.key === 'ArrowLeft' ? -1 : 1;
+        enterInspect((selectedNodeIndex + dir + hubCount) % hubCount);
+      }
+    });
+    window.addEventListener('keyup', function(e) { keysDown[e.key.toLowerCase()] = false; });
+
+    /* Wheel zoom */
+    window.addEventListener('wheel', function(e) {
+      if (window.__heroMode !== 'explore') return;
+      if (cmdModal.classList.contains('show')) return;
+      if (mode === 'inspect') {
+        if (nodePanel.contains(e.target) || nodeDetail.contains(e.target)) return;
+        e.preventDefault();
+        if (e.deltaY > 0) exitInspect();
+        return;
+      }
+      e.preventDefault();
+      zoomZ = Math.max(5.5, Math.min(24, zoomZ + e.deltaY * 0.012));
+      if (zoomZ > 21.5 && !zoomLocked) { zoomLocked = true; window.__enterPortfolio(); }
+    }, { passive:false });
+
+    /* Raycaster */
+    var raycaster = new THREE.Raycaster();
+    var ndc = new THREE.Vector2();
+    var tooltip = document.getElementById('node-tooltip');
+    var ntTitle = document.getElementById('nt-title');
+
+    function getNodePreview(desc) { return desc ? desc.slice(0, 90) + (desc.length > 90 ? '...' : '') : ''; }
+
+    window.addEventListener('mousemove', function(e) {
+      var mx = (e.clientX / window.innerWidth) * 2 - 1;
+      var my = (e.clientY / window.innerHeight) * 2 - 1;
+      hoverRotY = mx * 0.12;
+      hoverRotX = my * 0.06;
+      ndc.x = mx;
+      ndc.y = -my;
+      raycaster.setFromCamera(ndc, camera);
+      var hits = raycaster.intersectObjects(hubMeshes);
+      if (hits.length && mode === 'explore' && !isDragging) {
+        canvas.style.cursor = 'pointer';
+        var idx = hubMeshes.indexOf(hits[0].object);
+        if (focusedIndex !== idx) {
+          focusedIndex = idx;
+          var key = CONCEPTS[idx];
+          var data = NODE_DATA[key];
+          ntTitle.textContent = data.title ? data.title[currentLocale] || key : key;
+          document.getElementById('nt-tag').textContent = data.tag;
+          document.getElementById('nt-preview').textContent = getNodePreview(getText(data.desc));
+          tooltip.classList.add('show');
+        }
+      } else {
+        canvas.style.cursor = mode === 'explore' ? (isDragging ? 'grabbing' : 'grab') : '';
+        focusedIndex = -1;
+        tooltip.classList.remove('show');
+      }
+      updateTooltipPosition();
+    });
+
+    canvas.addEventListener('click', function(e) {
+      ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+      ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      var hits = raycaster.intersectObjects(hubMeshes);
+      if (hits.length) {
+        enterInspect(hubMeshes.indexOf(hits[0].object));
+      } else if (mode !== 'explore') {
+        exitInspect();
+      } else {
+        focusedIndex = -1;
+        tooltip.classList.remove('show');
+      }
+    });
+
+    function enterInspect(idx) {
+      if (window.__heroMode !== 'explore') return;
+      mode = 'inspect';
+      selectedNodeIndex = idx;
+      focusedIndex = idx;
+      heroEl.classList.add('inspect-mode');
+      nodePanel.classList.add('show');
+      nodePanel.setAttribute('aria-hidden', 'false');
+      focusRing.classList.add('active');
+      tooltip.classList.remove('show');
+      renderNodePanel(CONCEPTS[idx]);
+      var worldPos = hubPositions[idx].clone().applyMatrix4(group.matrixWorld);
+      var dir = worldPos.clone().normalize();
+      cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
+      cameraTargetLookAt.copy(worldPos);
+      hubMeshes.forEach(function(m, i) {
+        var isSelected = i === idx;
+        m.material.color.set(isSelected ? white : accent);
+        m.userData.halo.material.color.set(isSelected ? white : accent);
+        m.userData.halo.scale.setScalar(isSelected ? 1.1 : 0.7);
+      });
+      updateNodeDots();
+    }
+    window.__enterInspect = enterInspect;
+
+    function exitInspect() {
+      mode = 'explore';
+      selectedNodeIndex = -1;
+      focusedIndex = -1;
+      heroEl.classList.remove('inspect-mode');
+      nodePanel.classList.remove('show');
+      nodePanel.setAttribute('aria-hidden', 'true');
+      nodeDetail.classList.remove('show');
+      nodeDetail.setAttribute('aria-hidden', 'true');
+      focusRing.classList.remove('active');
+      tooltip.classList.remove('show');
+      cameraTargetPos.copy(cameraHome);
+      cameraTargetLookAt.set(0,0,0);
+      hubMeshes.forEach(function(m) {
+        m.material.color.set(accent);
+        m.userData.halo.material.color.set(accent);
+        m.userData.halo.scale.setScalar(0.7);
+      });
+      updateNodeDots();
+    }
+
+    function updateTooltipPosition() {
+      if (focusedIndex < 0 || mode !== 'explore') return;
+      var rect = canvas.getBoundingClientRect();
+      var v = hubPositions[focusedIndex].clone().applyMatrix4(group.matrixWorld).project(camera);
+      tooltip.style.left = ((v.x * 0.5 + 0.5) * rect.width) + 'px';
+      tooltip.style.top = ((-v.y * 0.5 + 0.5) * rect.height) + 'px';
+    }
+
+    document.getElementById('back-to-orbit').addEventListener('click', exitInspect);
+
+    /* Node dots */
+    var nodeDotsEl = document.getElementById('node-dots');
+    function renderNodeDots() {
+      nodeDotsEl.innerHTML = CONCEPTS.map(function(key,i) {
+        return '<button class="node-dot'+(i===selectedNodeIndex?' active':'')+'" data-index="'+i+'" aria-label="Inspect '+(NODE_DATA[key].title ? NODE_DATA[key].title[currentLocale] || key : key)+'"></button>';
+      }).join('');
+      nodeDotsEl.querySelectorAll('.node-dot').forEach(function(btn) {
+        btn.addEventListener('click', function() { if (window.__heroMode === 'explore') enterInspect(Number(btn.dataset.index)); });
+      });
+    }
+    function updateNodeDots() {
+      nodeDotsEl.querySelectorAll('.node-dot').forEach(function(btn,i) { btn.classList.toggle('active', i === selectedNodeIndex); });
+    }
+    renderNodeDots();
+
+    /* Panel rendering */
+    var npTitle = document.getElementById('np-title');
+    var npTag = document.getElementById('np-tag');
+    var npDesc = document.getElementById('np-desc');
+    var npChips = document.getElementById('np-chips');
+    var npContent = document.getElementById('np-content');
+    var npMore = document.getElementById('np-more');
+    var nodeIdeaView = document.getElementById('node-idea-view');
+    var nodeIdeaInput = document.getElementById('node-idea-input');
+    var nodeIdeaSubmit = document.getElementById('node-idea-submit');
+    var nodeIdeaBack = document.getElementById('node-idea-back');
+    var aiResult = document.getElementById('ai-result');
+    var aiResultPitch = document.getElementById('ai-result-pitch');
+    var aiResultChips = document.getElementById('ai-result-chips');
+    var aiResultSteps = document.getElementById('ai-result-steps');
+    var aiSendLink = document.getElementById('ai-send-link');
+    var aiNewIdea = document.getElementById('ai-new-idea');
+    var currentNodeKey = null;
+
+    function renderNodePanel(key) {
+      currentNodeKey = key;
+      var data = NODE_DATA[key];
+      npTitle.textContent = data.title ? data.title[currentLocale] || key : key;
+      npTag.textContent = data.tag;
+      npDesc.textContent = getText(data.desc);
+      npChips.innerHTML = data.chips.map(function(c) { return '<span>'+c+'</span>'; }).join('');
+      nodeIdeaView.classList.remove('show');
+      aiResult.classList.remove('show');
+      nodeIdeaInput.value = '';
+      /* render full node content (projects, timeline, tools, etc.) */
+      npContent.innerHTML = renderNodeContent(key, data.content);
+      npContent.style.display = 'block';
+      npMore.style.display = data.detail ? 'inline-flex' : 'none';
+      nodeDetail.classList.remove('show');
+      nodeDetail.setAttribute('aria-hidden', 'true');
+      attachContentHandlers(key, data.content);
+    }
+
+    function renderNodeContent(key, content) {
+      if (!content) return '';
+      var title = content.title ? '<h3>'+getText(content.title)+'</h3>' : '';
+      if (content.type === 'list') {
+        return title + '<ul class="node-content-list">' + content.items.map(function(item) {
+          return '<li><strong>'+getText(item.title)+'</strong> — '+getText(item.text)+'</li>';
+        }).join('') + '</ul>';
+      }
+      if (content.type === 'tools') {
+        return title + '<div class="node-grid node-tools">' + content.items.map(function(tool) {
+          return '<div class="node-card node-tool-card"><div class="node-card-title">'+tool.name+'<span class="node-card-meta">'+tool.meta+'</span></div><div class="node-card-desc">'+getText(tool.desc)+'</div><div class="node-card-links">'+tool.links.map(function(l) { return '<a href="'+l.url+'" target="_blank" rel="noopener">'+l.label+'</a>'; }).join('')+'</div></div>';
+        }).join('') + '</div>';
+      }
+      if (content.type === 'projects') {
+        var allLabel = currentLocale === 'es' ? 'Todos' : 'All';
+        var filters = [allLabel].concat(CATEGORIES);
+        return title + '<div class="node-filter" id="project-filters">' + filters.map(function(f) {
+          return '<button type="button" data-filter="'+f+'" class="'+(f === allLabel ? 'active' : '')+'">'+f+'</button>';
+        }).join('') + '</div><div class="node-grid node-projects" id="project-grid">' + renderProjectCards(PROJECTS) + '</div>';
+      }
+      if (content.type === 'resources') {
+        return title + '<div class="node-grid node-resources">' + content.items.map(function(r) {
+          return '<div class="node-card node-resource-card"><div class="node-card-title">'+getText(r.title)+'</div><div class="node-card-meta">'+r.author+' · '+getText(r.type)+'</div><div class="node-card-links"><a href="'+r.link+'" target="_blank" rel="noopener">'+(currentLocale==='es'?'Leer →':'Read →')+'</a></div></div>';
+        }).join('') + '</div>';
+      }
+      if (content.type === 'testimonials') {
+        return title + '<div class="node-testimonials">' + content.items.map(function(t) {
+          return '<blockquote class="node-testimonial"><q>'+getText(t.quote)+'</q><cite><strong>'+t.author+'</strong> — '+t.role+'</cite></blockquote>';
+        }).join('') + '</div>';
+      }
+      if (content.type === 'timeline') {
+        return title + '<div class="node-timeline">' + content.items.map(function(item) {
+          var isActive = item.date.indexOf('Present') !== -1;
+          var activeClass = isActive ? ' active' : '';
+          var dot = isActive ? '<span class="node-timeline-dot" aria-hidden="true"></span>' : '';
+          var companyHtml = item.url ? '<a href="'+item.url+'" target="_blank" rel="noopener noreferrer">'+item.company+'</a>' : item.company;
+          return '<div class="node-timeline-item'+activeClass+'"><div class="node-timeline-date">'+dot+item.date+'</div><div class="node-timeline-role">'+getText(item.role)+'</div><div class="node-timeline-company">'+companyHtml+'</div></div>';
+        }).join('') + '</div>';
+      }
+      return '';
+    }
+
+    function renderProjectCards(projects) {
+      return projects.map(function(p) {
+        var link = '/' + locale + '/projects/' + (p.slug || p.id) + '/';
+        var featuredBadge = p.featured ? '<span class="node-card-badge">'+(currentLocale==='es'?'Destacado':'Featured')+'</span>' : '';
+        var tagsHtml = p.tags.slice(0, 3).map(function(t) { return '<span class="node-card-tag">' + t + '</span>'; }).join('');
+        return '<div class="node-card node-project-card" data-category="'+p.category+'">' +
+          '<div class="node-card-image"><img src="'+p.image+'" alt="'+p.title+'" loading="lazy" /></div>' +
+          '<div class="node-card-body">' +
+          '<div class="node-card-title">'+p.title+featuredBadge+'<span class="node-card-meta">'+p.category+' · '+p.type+'</span></div>' +
+          '<div class="node-card-desc">'+p.desc+'</div>' +
+          '<div class="node-card-tags">'+tagsHtml+'</div>' +
+          '<div class="node-card-links"><a href="'+link+'">View project →</a></div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function attachContentHandlers(key, content) {
+      if (content.type === 'projects') {
+        var filterContainer = document.getElementById('project-filters');
+        var grid = document.getElementById('project-grid');
+        if (!filterContainer || !grid) return;
+        filterContainer.querySelectorAll('button').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            filterContainer.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var filter = btn.dataset.filter;
+            var allLabel = currentLocale === 'es' ? 'Todos' : 'All';
+            var filtered = filter === allLabel ? PROJECTS : PROJECTS.filter(function(p) { return p.category === filter; });
+            grid.innerHTML = renderProjectCards(filtered);
+          });
+        });
+      }
+    }
+
+    /* Detail view */
+    var nodeDetail = document.getElementById('node-detail');
+    var ndTitle = document.getElementById('nd-title');
+    var ndTag = document.getElementById('nd-tag');
+    var ndIntro = document.getElementById('nd-intro');
+    var ndSections = document.getElementById('nd-sections');
+    var ndLinks = document.getElementById('nd-links');
+    var ndImage = document.getElementById('nd-image');
+    var ndCarousel = document.getElementById('nd-carousel');
+    var nodeDetailBack = document.getElementById('node-detail-back');
+
+    npMore.addEventListener('click', function() {
+      if (!currentNodeKey) return;
+      var data = NODE_DATA[currentNodeKey];
+      var detail = data.detail;
+      if (!detail) return;
+      ndTitle.textContent = data.title ? data.title[currentLocale] || currentNodeKey : currentNodeKey;
+      ndTag.textContent = data.tag;
+      ndImage.innerHTML = detail.image ? '<img src="' + detail.image + '" alt="' + (detail.imageAlt || data.title[currentLocale] || currentNodeKey) + '" loading="lazy" />' : '';
+      ndIntro.textContent = getText(detail.intro);
+      ndSections.innerHTML = detail.sections.map(function(s, i) {
+        return '<div class="nd-section reveal-item" style="animation-delay:'+i*80+'ms"><h4>'+getText(s.title)+'</h4><p>'+getText(s.text)+'</p></div>';
+      }).join('');
+      ndLinks.innerHTML = (detail.links || []).map(function(l) {
+        if (l.url === '#' || l.url.indexOf('mailto:') === 0) {
+          return '<button type="button" class="node-email-btn" data-email-action>'+l.label+'</button>';
+        }
+        return '<a href="'+l.url+'" target="_blank" rel="noopener">'+l.label+'</a>';
+      }).join('');
+      var emailAction = ndLinks.querySelector('[data-email-action]');
+      if (emailAction) {
+        emailAction.addEventListener('click', function() {
+          var label = emailAction.textContent || '';
+          emailAction.textContent = (currentLocale === 'es' ? 'Enviando...' : 'Sending...');
+          fetch('/api/send-idea', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'contact', name: 'Portfolio Visitor', email: '', message: (currentLocale === 'es' ? 'Un visitante del portfolio hizo clic en "' + label + '" desde el nodo ' + (currentNodeKey || '') + '.' : 'A portfolio visitor clicked "' + label + '" from the ' + (currentNodeKey || '') + ' node.'), page: 'node-' + (currentNodeKey || '').toLowerCase(), language: currentLocale })
+          }).then(function(r) { return r.json(); }).then(function(res) {
+            emailAction.textContent = (currentLocale === 'es' ? 'Enviado!' : 'Sent!');
+            setTimeout(function() { emailAction.textContent = label; }, 2000);
+          }).catch(function() {
+            emailAction.textContent = (currentLocale === 'es' ? 'Error' : 'Error');
+            setTimeout(function() { emailAction.textContent = label; }, 2000);
+          });
+        });
+      }
+      /* Render testimonials carousel for CLIENTS node */
+      if (currentNodeKey === 'CLIENTS' && data.content && data.content.type === 'testimonials') {
+        var items = data.content.items;
+        var carouselHtml = '<div class="carousel-track" id="carousel-track">';
+        items.forEach(function(t, i) {
+          var companyLink = t.companyUrl ? '<a href="'+t.companyUrl+'" target="_blank" rel="noopener" class="carousel-company-link">'+t.companyName+'</a>' : (t.companyName || '');
+          carouselHtml += '<div class="carousel-slide'+(i === 0 ? ' active' : '')+'">' +
+            '<blockquote class="carousel-quote"><q>'+getText(t.quote)+'</q></blockquote>' +
+            '<div class="carousel-author"><strong>'+t.author+'</strong> — '+t.role+', '+companyLink+'</div>' +
+            '</div>';
+        });
+        carouselHtml += '</div>';
+        carouselHtml += '<div class="carousel-controls">' +
+          '<button type="button" class="carousel-prev" id="carousel-prev" aria-label="Previous">←</button>' +
+          '<span class="carousel-counter" id="carousel-counter">1 / '+items.length+'</span>' +
+          '<button type="button" class="carousel-next" id="carousel-next" aria-label="Next">→</button>' +
+          '</div>';
+        ndCarousel.innerHTML = carouselHtml;
+        ndCarousel.style.display = 'block';
+        /* Carousel navigation */
+        var currentSlide = 0;
+        var slides = ndCarousel.querySelectorAll('.carousel-slide');
+        var counter = document.getElementById('carousel-counter');
+        function showSlide(idx) {
+          slides.forEach(function(s) { s.classList.remove('active'); });
+          slides[idx].classList.add('active');
+          counter.textContent = (idx + 1) + ' / ' + slides.length;
+        }
+        document.getElementById('carousel-prev').addEventListener('click', function() {
+          currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+          showSlide(currentSlide);
+        });
+        document.getElementById('carousel-next').addEventListener('click', function() {
+          currentSlide = (currentSlide + 1) % slides.length;
+          showSlide(currentSlide);
+        });
+      } else {
+        ndCarousel.innerHTML = '';
+        ndCarousel.style.display = 'none';
+      }
+      nodeDetail.classList.add('show');
+      nodeDetail.setAttribute('aria-hidden', 'false');
+    });
+
+    nodeDetailBack.addEventListener('click', function() {
+      nodeDetail.classList.remove('show');
+      nodeDetail.setAttribute('aria-hidden', 'true');
+    });
+
+    nodeDetail.addEventListener('click', function(e) {
+      if (e.target === nodeDetail) {
+        nodeDetail.classList.remove('show');
+        nodeDetail.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    nodeIdeaBack.addEventListener('click', function() {
+      nodeIdeaView.classList.remove('show');
+      npContent.style.display = 'block';
+      npMore.style.display = 'inline-flex';
+      aiResult.classList.remove('show');
+      nodeIdeaInput.value = '';
+      mode = 'inspect';
+    });
+
+    function typeText(el, text, speed, done) {
+      el.textContent = '';
+      el.classList.add('typing');
+      var i = 0;
+      function step() {
+        if (i < text.length) { el.textContent += text.charAt(i); i++; setTimeout(step, speed); }
+        else { el.classList.remove('typing'); if (done) done(); }
+      }
+      step();
+    }
+
+    function runNodeAnalysis() {
+      var text = nodeIdeaInput.value.trim();
+      if (!text || !currentNodeKey) return;
+      if (text.length < 3 || text.length > 2000) return;
+      var injectionRe = /ignore\s+(all\s+)?(previous|prior|above)|disregard\s+(all\s+)?(previous|prior)|you\s+are\s+now\s+(a|an)|act\s+as\s+(a|an)\s+(different|new)|from\s+now\s+on\s+(you\s+)?(will|must|are)|pretend\s+(you\s+)?(are|to\s+be)/i;
+      if (injectionRe.test(text)) return;
+      var offTopicRe = /what\s+(model|ai|llm|gpt|claude)\s+are\s+you|who\s+(made|created|built)\s+you|write\s+(me\s+)?(a\s+)?(poem|song|story)|tell\s+me\s+(a\s+)?joke/i;
+      if (offTopicRe.test(text)) return;
+      var enrichment = NODE_ENRICHMENT[currentNodeKey];
+      var tags = decomposeIdea(text);
+
+      aiResultPitch.textContent = (currentLocale === 'es' ? 'Analizando...' : 'Analyzing...');
+      aiResultChips.innerHTML = '';
+      aiResultSteps.innerHTML = '';
+      aiResult.classList.add('show');
+      mode = 'result';
+
+      fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectIdea: text, language: currentLocale })
+      }).then(function(res) {
+        if (res.status === 429) throw new Error('rate_limit');
+        return res.json();
+      }).then(function(result) {
+        var pitch, components, steps;
+        if (result.success && result.data) {
+          pitch = result.data.polishedIdea || result.data.idea || text;
+          components = result.data.tags || tags.slice(0, 5);
+          steps = result.data.steps || [];
+        } else {
+          throw new Error('api_error');
+        }
+        return renderNodeResult(pitch, components, steps, text, enrichment);
+      }).catch(function() {
+        /* Fallback: local generation when API unreachable */
+        var lower = text.toLowerCase();
+        var verbs = lower.match(/\b(connect|track|manage|share|find|match|pay|automate|build|launch|monitor|analyze|book|schedule|order|deliver|learn|teach|design|create)\b/g) || [];
+        var mainVerb = verbs[0] || enrichment.verbs[0];
+        var pitch = (currentLocale === 'es'
+          ? 'Una ' + enrichment.lens.toLowerCase() + ' que ' + mainVerb + ' ' + lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '') + '. ' + enrichment.angle
+          : 'A ' + enrichment.lens.toLowerCase() + ' product that ' + mainVerb + 's ' + lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '') + '. ' + enrichment.angle);
+        var components = Array.from(new Set(tags.slice(0,3).concat(enrichment.verbs.slice(0,2).map(function(v) { return v.toUpperCase(); }))));
+        var steps = currentLocale === 'es'
+          ? ['Validar la hipótesis con 5 usuarios reales', 'Apply the '+currentNodeKey+' lens: '+enrichment.angle.toLowerCase(), 'Construir MVP funcional en 2-4 semanas', 'Lanzar y medir engagement real']
+          : ['Validate the hypothesis with 5 real users', 'Apply the '+currentNodeKey+' lens: '+enrichment.angle.toLowerCase(), 'Build a functional MVP in 2-4 weeks', 'Launch and measure real engagement'];
+        renderNodeResult(pitch, components, steps, text, enrichment);
+      });
+    }
+
+    /* Store last node analysis for mailprex send */
+    var _lastNodeIdea = { pitch: '', components: [], steps: [], originalText: '' };
+
+    function renderNodeResult(pitch, components, steps, originalText, enrichment) {
+      var componentsArr = Array.isArray(components) ? components : [];
+      var stepsArr = Array.isArray(steps) ? steps : [];
+      aiResultChips.innerHTML = componentsArr.map(function(c,i) { return '<span class="reveal-item" style="animation-delay:'+i*60+'ms">'+c+'</span>'; }).join('');
+      aiResultSteps.innerHTML = stepsArr.map(function(s,i) { return '<li class="reveal-item" style="animation-delay:'+i*100+'ms">'+s+'</li>'; }).join('');
+      _lastNodeIdea = { pitch: pitch, components: componentsArr, steps: stepsArr, originalText: originalText };
+      typeText(aiResultPitch, pitch, 14);
+    }
+
+    nodeIdeaSubmit.addEventListener('click', runNodeAnalysis);
+    nodeIdeaInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runNodeAnalysis(); }
+    });
+    aiNewIdea.addEventListener('click', function() { nodeIdeaInput.value = ''; nodeIdeaInput.focus(); aiResult.classList.remove('show'); mode = 'inspect'; });
+
+    /* Send idea via Mailprex */
+    aiSendLink.addEventListener('click', function() {
+      if (!_lastNodeIdea.originalText) return;
+      var origText = aiSendLink.textContent;
+      aiSendLink.textContent = (currentLocale === 'es' ? 'Enviando...' : 'Sending...');
+      aiSendLink.disabled = true;
+      fetch('/api/send-idea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea: _lastNodeIdea.originalText,
+          polishedIdea: _lastNodeIdea.pitch,
+          tags: _lastNodeIdea.components,
+          steps: _lastNodeIdea.steps,
+          language: currentLocale
+        })
+      }).then(function(res) { return res.json(); }).then(function(data) {
+        if (data.success) {
+          aiSendLink.textContent = (currentLocale === 'es' ? 'Enviado!' : 'Sent!');
+          setTimeout(function() { aiSendLink.textContent = origText; aiSendLink.disabled = false; }, 2000);
+        } else {
+          throw new Error(data.error || 'Failed');
+        }
+      }).catch(function() {
+        aiSendLink.textContent = (currentLocale === 'es' ? 'Error - reintentá' : 'Error - retry');
+        setTimeout(function() { aiSendLink.textContent = origText; aiSendLink.disabled = false; }, 2000);
+      });
+    });
+
+    /* Portfolio transition */
+    window.__enterPortfolio = function(targetHref) {
+      if (window.__heroMode !== 'explore') return;
+      window.__heroMode = 'portfolio';
+      var veil = document.getElementById('transition-veil');
+      if (veil) veil.classList.add('show');
+      setTimeout(function() {
+        heroEl.classList.add('exited');
+        document.documentElement.classList.remove('locked');
+        window.scrollTo(0,0);
+        setTimeout(function() {
+          heroEl.style.display = 'none';
+          if (rafId) cancelAnimationFrame(rafId);
+          veil.classList.remove('show');
+          var target = document.querySelector(targetHref || '#understand');
+          if (target) target.scrollIntoView({ behavior:'auto' });
+        }, 480);
+      }, 260);
+    };
+
+    document.getElementById('skip-btn').addEventListener('click', function() { window.__enterPortfolio(); });
+
+    /* Decompose effect */
+    window.__graphDecompose = function(tags) {
+      labelEls.forEach(function(el,i) { el.textContent = tags[i] || CONCEPTS[i]; });
+      hubMeshes.forEach(function(m) {
+        m.material.color.set(0xffffff);
+        m.userData.halo.material.color.set(0xffffff);
+      });
+      decomposeActive = true;
+      clearTimeout(decomposeTimer);
+      decomposeTimer = setTimeout(function() {
+        labelEls.forEach(function(el,i) { el.textContent = CONCEPTS[i]; });
+        hubMeshes.forEach(function(m) {
+          m.material.color.set(accent);
+          m.userData.halo.material.color.set(accent);
+        });
+        decomposeActive = false;
+      }, 4200);
+    };
+
+    /* Animation loop */
+    var introStart = performance.now();
+    var introDuration = 2200;
+    function introProgress() { return Math.min((performance.now() - introStart) / introDuration, 1); }
+    function easeOutExpo(x) { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+
+    var exitProgressEl = document.getElementById('exit-progress');
+    var t = 0;
+    var panSpeed = 0.012;
+
+    function animate() {
+      rafId = requestAnimationFrame(animate);
+      if (!reducedMotion) {
+        t += 0.0022;
+        if (mode === 'explore') {
+          if (keysDown['w'] || keysDown['arrowup']) dragRotX = Math.max(-0.9, dragRotX - panSpeed);
+          if (keysDown['s'] || keysDown['arrowdown']) dragRotX = Math.min(0.9, dragRotX + panSpeed);
+          if (keysDown['a'] || keysDown['arrowleft']) dragRotY -= panSpeed;
+          if (keysDown['d'] || keysDown['arrowright']) dragRotY += panSpeed;
+        }
+        group.rotation.y = t + dragRotY + hoverRotY * 0.5;
+        group.rotation.x = Math.sin(t*0.6)*0.08 + dragRotX + hoverRotX * 0.3;
+
+        var ip = easeOutExpo(introProgress());
+        var thinkZoom = decomposeActive ? -0.6 : 0;
+        var homeZ = 15 - ip * (15 - zoomZ) + thinkZoom;
+        cameraHome.set(0, 0, homeZ);
+
+        if (mode === 'explore') {
+          cameraTargetPos.lerp(cameraHome, 0.06);
+          cameraTargetLookAt.lerp(new THREE.Vector3(0,0,0), 0.06);
+        } else if (selectedNodeIndex >= 0) {
+          var worldPos = hubPositions[selectedNodeIndex].clone().applyMatrix4(group.matrixWorld);
+          var dir = worldPos.clone().normalize();
+          cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
+          cameraTargetLookAt.copy(worldPos);
+        }
+
+        camera.position.lerp(cameraTargetPos, 0.055);
+        currentLookAt.lerp(cameraTargetLookAt, 0.055);
+        camera.lookAt(currentLookAt);
+
+        var pulse = decomposeActive ? (1 + Math.sin(t*22)*0.06) : 1;
+        var breathing = (mode === 'explore' && !isDragging) ? (1 + Math.sin(t*1.4)*0.006) : 1;
+        group.scale.setScalar(pulse * breathing);
+
+        var haloPulse = decomposeActive ? (0.9 + Math.sin(t*30)*0.25) : 0.7;
+        hubMeshes.forEach(function(m, i) {
+          if (i !== selectedNodeIndex) m.userData.halo.scale.setScalar(haloPulse);
+        });
+
+        gridGroup.rotation.y = t * 0.15;
+        gridGroup.position.y = -3.6 - (zoomZ - 9) * 0.05;
+
+        if (exitProgressEl && mode === 'explore') {
+          if (zoomZ > 10) {
+            var pct = Math.min(100, Math.max(0, (zoomZ - 9)/(21.5 - 9)*100));
+            exitProgressEl.style.width = pct + '%';
+            exitProgressEl.classList.add('show');
+          } else {
+            exitProgressEl.classList.remove('show');
+          }
+        }
+      }
+      group.updateMatrixWorld();
+      updateLabels();
+      updateTooltipPosition();
+      renderer.render(scene, camera);
+    }
+    animate();
+  })();
+})();
+</script>
+
+

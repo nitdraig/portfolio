@@ -1,0 +1,179 @@
+---
+import type { Locale } from "../i18n/ui";
+import { ui } from "../i18n/ui";
+import { projects } from "../data/projects";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const n = ui[locale].narrative;
+const prefix = `/${locale}`;
+
+/* Take up to 6 featured projects, or first 6 by homeOrder */
+const featured = projects
+  .filter((p) => p.featured)
+  .sort((a, b) => (a.homeOrder ?? 99) - (b.homeOrder ?? 99));
+const showcase = featured.length >= 4
+  ? featured.slice(0, 6)
+  : [...featured, ...projects.filter((p) => !p.featured)].slice(0, 6);
+---
+
+<section class="narrative" id="understand">
+  <div class="sect-head">
+    <span class="sect-num">{n.understandNum}</span>
+    <h2 class="sect-title">{n.understandTitle}</h2>
+  </div>
+  <p class="sect-sub">{n.understandSub}</p>
+  <div class="flow-mini">
+    {n.flowSteps.map((step, i) => (
+      <Fragment>
+        <span class="node">{step}</span>
+        {i < n.flowSteps.length - 1 ? <span class="arrow">→</span> : null}
+      </Fragment>
+    ))}
+  </div>
+</section>
+
+<section class="narrative" id="build">
+  <div class="sect-head">
+    <span class="sect-num">{n.buildNum}</span>
+    <h2 class="sect-title">{n.buildTitle}</h2>
+  </div>
+  <p class="sect-sub">{n.buildSub}</p>
+  <div class="pipeline">
+    {n.pipeline.map((stage) => (
+      <div class="stage">
+        <div class="n">{stage.n}</div>
+        <div class="t">{stage.t}</div>
+        <div class="d">{stage.d}</div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<section class="narrative" id="proof">
+  <div class="sect-head">
+    <span class="sect-num">{n.proofNum}</span>
+    <h2 class="sect-title">{n.proofTitle}</h2>
+  </div>
+  <p class="sect-sub">{n.proofSub}</p>
+  <div class="project-grid">
+    {showcase.map((p) => (
+      <a href={`${prefix}/projects/${p.slug}/`} class="project-card reveal">
+        <div class="project-card-image">
+          <img src={p.image} alt={p.title[locale]} loading="lazy" width="400" height="220" />
+        </div>
+        <div class="project-card-body">
+          <h3 class="project-card-title">{p.title[locale]}</h3>
+          <p class="project-card-desc">{p.shortDescription[locale]}</p>
+          <div class="project-card-meta">
+            <span class="project-card-type">{p.deliveryType}</span>
+            {p.highlightMetric && <span class="project-card-metric">{p.highlightMetric[locale]}</span>}
+          </div>
+        </div>
+      </a>
+    ))}
+  </div>
+  <div class="project-grid-cta">
+    <a href={`${prefix}/#`} class="project-grid-link">{n.proofCta || "Ver todos los proyectos →"}</a>
+  </div>
+</section>
+
+<section class="narrative" id="work">
+  <div class="sect-head">
+    <span class="sect-num">{n.workNum}</span>
+    <h2 class="sect-title">{n.workTitle}</h2>
+  </div>
+  <div class="pillars">
+    {n.pillars.map((pillar) => (
+      <div class="pillar">
+        <div class="pt">{pillar.t}</div>
+        <div class="pd">{pillar.d}</div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<section class="narrative" id="connect">
+  <div class="sect-head">
+    <span class="sect-num">{n.connectNum}</span>
+    <h2 class="sect-title">{n.connectTitle}</h2>
+  </div>
+  <div class="connect-row">
+    <div class="connect-cta">{n.connectCta}</div>
+    <div class="connect-links">
+      <button type="button" class="connect-email-btn" id="connect-email-btn">me@agustin.top</button>
+      <a href="https://www.linkedin.com/in/avellaneda-agustin/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://github.com/nitdraig" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .narrative { position: relative; z-index: 1; padding: 120px 32px; max-width: 1080px; margin: 0 auto; border-top: 1px solid var(--color-line); }
+  .sect-head { display: flex; gap: 20px; align-items: baseline; margin-bottom: 48px; }
+  .sect-num { font-family: var(--font-mono); color: var(--color-accent); font-size: 13px; }
+  h2.sect-title { font-family: var(--font-grotesk); font-weight: 600; font-size: clamp(1.5rem,3vw,2.1rem); }
+  .sect-sub { color: var(--color-text-dim); font-size: 15px; max-width: 52ch; margin-top: 14px; line-height: 1.6; }
+  .flow-mini { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12.5px; color: var(--color-text-dim); margin-top: 28px; }
+  .flow-mini .node { border: 1px solid var(--color-line); padding: 7px 12px; border-radius: 20px; }
+  .flow-mini .arrow { color: var(--color-text-faint); }
+  .pipeline { display: flex; gap: 0; margin-top: 40px; overflow-x: auto; padding-bottom: 8px; }
+  .pipeline .stage { flex: 1; min-width: 150px; padding: 20px 18px 20px 0; position: relative; }
+  .pipeline .stage::after { content: ''; position: absolute; top: 24px; right: 0; width: 100%; height: 1px; background: var(--color-line); }
+  .pipeline .stage:last-child::after { display: none; }
+  .pipeline .stage .n { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-faint); margin-bottom: 10px; }
+  .pipeline .stage .t { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; }
+  .pipeline .stage .d { font-size: 12.5px; color: var(--color-text-dim); margin-top: 6px; line-height: 1.5; }
+  /* Project grid */
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 40px; }
+  .project-card { display: flex; flex-direction: column; border: 1px solid var(--color-line); border-radius: 8px; overflow: hidden; background: var(--color-bg-panel); text-decoration: none; transition: border-color .2s, transform .15s; }
+  .project-card:hover { border-color: var(--color-accent-dim); transform: translateY(-2px); }
+  .project-card-image { width: 100%; height: 180px; overflow: hidden; background: var(--color-line); }
+  .project-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+  .project-card:hover .project-card-image img { transform: scale(1.05); }
+  .project-card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+  .project-card-title { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; color: var(--color-text); margin-bottom: 6px; }
+  .project-card-desc { font-size: 13px; color: var(--color-text-dim); line-height: 1.55; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .project-card-meta { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .project-card-type { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-faint); border: 1px solid var(--color-line); border-radius: 3px; padding: 2px 6px; text-transform: capitalize; }
+  .project-card-metric { font-family: var(--font-mono); font-size: 10px; color: var(--color-accent); }
+  .project-grid-cta { margin-top: 28px; text-align: center; }
+  .project-grid-link { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-dim); border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; }
+  .project-grid-link:hover { color: var(--color-text); border-color: var(--color-text-faint); }
+  .pillars { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 1px; margin-top: 40px; background: var(--color-line); border: 1px solid var(--color-line); }
+  .pillar { background: var(--color-bg); padding: 26px 22px; }
+  .pillar .pt { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; }
+  .pillar .pd { font-size: 12.5px; color: var(--color-text-dim); margin-top: 8px; line-height: 1.55; }
+  .connect-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; flex-wrap: wrap; margin-top: 16px; }
+  .connect-cta { font-family: var(--font-grotesk); font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 600; max-width: 14ch; line-height: 1.1; }
+  .connect-links { display: flex; flex-direction: column; gap: 10px; font-family: var(--font-mono); font-size: 13px; }
+  .connect-links a { color: var(--color-text-dim); border-bottom: 1px solid transparent; }
+  .connect-links a:hover { color: var(--color-text); border-color: var(--color-text-faint); }
+  .connect-email-btn { background: none; border: none; font-family: var(--font-mono); font-size: 13px; color: var(--color-text-dim); cursor: pointer; padding: 0; text-align: left; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; }
+  .connect-email-btn:hover { color: var(--color-text); border-color: var(--color-text-faint); }
+</style>
+
+<script is:inline define:vars={{ locale }}>
+(function() {
+  var btn = document.getElementById('connect-email-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var orig = btn.textContent;
+    btn.textContent = locale === 'es' ? 'Enviando...' : 'Sending...';
+    fetch('/api/send-idea', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'contact', name: 'Portfolio Visitor', email: '', message: locale === 'es' ? 'Un visitante del portfolio quiere contactarte desde la sección Conectemos.' : 'A portfolio visitor wants to contact you from the Connect section.', page: 'connect', language: locale })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      btn.textContent = locale === 'es' ? 'Enviado!' : 'Sent!';
+      setTimeout(function() { btn.textContent = orig; }, 2000);
+    }).catch(function() {
+      btn.textContent = locale === 'es' ? 'Error' : 'Error';
+      setTimeout(function() { btn.textContent = orig; }, 2000);
+    });
+  });
+})();
+</script>

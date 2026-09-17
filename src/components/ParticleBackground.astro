@@ -1,0 +1,83 @@
+---
+/**
+ * Reusable particle canvas background.
+ * Matches the implementation in index.astro.
+ */
+---
+
+<canvas id="particle-bg"></canvas>
+
+<script is:inline>
+(function() {
+  var canvas = document.getElementById('particle-bg');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var w, h, dpr;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  var isMobile = w < 640;
+  var COUNT = isMobile ? Math.min(30, Math.floor((w*h) / 40000)) : Math.min(90, Math.floor((w*h) / 22000));
+  var LINE_DIST = isMobile ? 90 : 130;
+  var LINE_DIST2 = LINE_DIST * LINE_DIST;
+  var particles = Array.from({length: COUNT}, function() {
+    return { x: Math.random()*w, y: Math.random()*h, vy: 0.06 + Math.random()*0.1, r: 0.8 + Math.random()*1.4 };
+  });
+  var lastScroll = window.scrollY, scrollVel = 0;
+  window.addEventListener('scroll', function() {
+    var now = window.scrollY;
+    scrollVel += (now - lastScroll) * 0.04;
+    lastScroll = now;
+  }, { passive:true });
+  function particleColors() {
+    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return { stroke: dark ? 'rgba(154,156,159,0.12)' : 'rgba(0,0,0,0.08)', fill: dark ? 'rgba(59,130,246,0.55)' : 'rgba(37,99,235,0.5)' };
+  }
+  function step() {
+    requestAnimationFrame(step);
+    if (reducedMotion) return;
+    scrollVel *= 0.9;
+    var colors = particleColors();
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = colors.stroke;
+    ctx.lineWidth = 1;
+    for (var i=0;i<particles.length;i++) {
+      var p = particles[i];
+      p.y -= p.vy + scrollVel;
+      if (p.y < -10) { p.y = h + 10; p.x = Math.random()*w; }
+      if (p.y > h + 10) { p.y = -10; p.x = Math.random()*w; }
+      for (var j=i+1;j<particles.length;j++) {
+        var q = particles[j];
+        var dx = p.x-q.x, dy = p.y-q.y;
+        var d2 = dx*dx+dy*dy;
+        if (d2 < LINE_DIST2) {
+          ctx.globalAlpha = 1 - d2/LINE_DIST2;
+          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.fill;
+    particles.forEach(function(p) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  step();
+})();
+</script>
+
+<style is:global>
+  #particle-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+</style>

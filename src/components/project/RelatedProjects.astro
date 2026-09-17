@@ -1,0 +1,180 @@
+---
+import type { Locale } from "../../i18n/ui";
+import { ui } from "../../i18n/ui";
+import { projects, type Project } from "../../data/projects";
+
+interface Props {
+  locale: Locale;
+  project: Project;
+}
+
+const { locale, project } = Astro.props;
+const t = ui[locale].projectDetail;
+const prefix = `/${locale}`;
+const related = projects
+  .filter((p) => p.slug !== project.slug)
+  .sort((a, b) => {
+    const aScore =
+      (a.industry === project.industry ? 2 : 0) +
+      (a.deliveryType === project.deliveryType ? 1 : 0);
+    const bScore =
+      (b.industry === project.industry ? 2 : 0) +
+      (b.deliveryType === project.deliveryType ? 1 : 0);
+    return bScore - aScore;
+  })
+  .slice(0, 3);
+---
+
+<section class="related-projects">
+  <div class="related-projects-inner">
+    <h3 class="related-projects-heading reveal">{t.moreProjects}</h3>
+
+    {related.length > 0 && (
+      <div class="related-projects-grid mb-12">
+        {related.map((item) => (
+          <a
+            href={`${prefix}/projects/${item.slug}`}
+            class="related-projects-card reveal"
+          >
+            <div class="related-projects-card-image" style={`--card-color: var(--color-accent)`}>
+              <img
+                src={item.image}
+                alt={item.title[locale]}
+                width="400"
+                height="144"
+                loading="lazy"
+              />
+            </div>
+            <div class="related-projects-card-body">
+              <h4 class="related-projects-card-title">{item.title[locale]}</h4>
+              <p class="related-projects-card-desc">{item.shortDescription[locale]}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    <div class="text-center reveal">
+      <a href={`${prefix}/#projects`} class="related-projects-view-all">
+        {t.viewAllProjects}
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .related-projects {
+    background: transparent;
+    padding-bottom: 2rem;
+  }
+
+  .related-projects-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+  }
+
+  .related-projects-heading {
+    font-family: var(--font-grotesk);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    text-align: center;
+    margin: 0 0 3rem;
+  }
+
+  .related-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 768px) {
+    .related-projects-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .related-projects-card {
+    display: block;
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: border-color 0.2s;
+  }
+  .related-projects-card:hover { border-color: var(--color-accent); }
+
+  .related-projects-card-image {
+    height: 9rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .related-projects-card-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--color-bg-panel), transparent 60%);
+    opacity: 0.3;
+  }
+  .related-projects-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+  .related-projects-card:hover .related-projects-card-image img {
+    transform: scale(1.05);
+  }
+
+  .related-projects-card-body {
+    padding: 1rem;
+  }
+
+  .related-projects-card-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+  }
+
+  .related-projects-card-desc {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--color-text-faint);
+    margin: 0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .related-projects-view-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .related-projects-view-all:hover { opacity: 0.85; }
+
+  @media (max-width: 720px) {
+    .related-projects-inner {
+      margin: 0 1rem;
+      padding: 2rem 1.25rem;
+      border-radius: 12px;
+    }
+  }
+</style>

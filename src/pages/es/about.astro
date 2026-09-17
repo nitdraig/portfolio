@@ -1,0 +1,222 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Footer from "../../components/Footer.astro";
+import { TIMELINE, SKILLS, BIO, APPROACH } from "../../data/experience";
+
+const locale = "es";
+---
+
+<BaseLayout locale={locale} title="Sobre Mí — Agustín Avellaneda" canonicalPath="/about">
+  <main>
+    <section class="hero">
+      <div class="hero-label">SOBRE MÍ</div>
+      <img class="profile-photo" src="/profile.webp" alt="Agustín Avellaneda" width="128" height="128" loading="eager" />
+      <h1 class="hero-title">Agustín Avellaneda</h1>
+      <p class="hero-role">Independent Product Engineer</p>
+      <p class="hero-bio">{BIO[locale]}</p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="contact-btn" type="button">Contactarme</button>
+        <a class="btn-secondary" href={`/${locale}/#proof`}>Ver trabajo</a>
+      </div>
+    </section>
+
+    <section class="approach-section">
+      <div class="section-label">CÓMO PIENSO</div>
+      <div class="approach-grid">
+        {APPROACH[locale].map((item, i) => (
+          <div class="approach-card reveal" style={{ animationDelay: `${i * 100}ms` }}>
+            <div class="approach-title">{item.title}</div>
+            <div class="approach-text">{item.text}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="timeline-section">
+      <div class="section-label">EXPERIENCIA</div>
+      <div class="timeline">
+        {TIMELINE.map((item, i) => (
+          <div class={`timeline-item reveal${item.date.includes('Present') ? ' active' : ''}`} style={{ animationDelay: `${i * 80}ms` }}>
+            <div class="timeline-date">{item.date.includes('Present') && <span class="active-dot" aria-hidden="true"></span>}{item.date}</div>
+            <div class="timeline-content">
+              <div class="timeline-role">{item.role}</div>
+              <div class="timeline-company">{item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.company}</a> : item.company}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="skills-section">
+      <div class="section-label">STACK</div>
+      <div class="skills-grid">
+        {SKILLS.map((skill, i) => (
+          <div class="skill-chip reveal" style={{ animationDelay: `${i * 40}ms` }}>
+            {skill}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="social-section">
+      <div class="section-label">CONEXIONES</div>
+      <div class="social-grid">
+        <a class="social-card reveal" href="https://www.linkedin.com/in/avellaneda-agustin/" target="_blank" rel="noopener noreferrer">
+          <span class="social-name">LinkedIn</span>
+          <span class="social-handle">/in/avellaneda-agustin</span>
+        </a>
+        <a class="social-card reveal" href="https://github.com/nitdraig" target="_blank" rel="noopener noreferrer">
+          <span class="social-name">GitHub</span>
+          <span class="social-handle">@nitdraig</span>
+        </a>
+        <a class="social-card reveal" href="https://excelso.xyz" target="_blank" rel="noopener noreferrer">
+          <span class="social-name">Excelso</span>
+          <span class="social-handle">Product Studio</span>
+        </a>
+        <a class="social-card reveal" href="https://blog.agustin.top" target="_blank" rel="noopener noreferrer">
+          <span class="social-name">Blog</span>
+          <span class="social-handle">blog.agustin.top</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="cta-section" id="contact">
+      <div class="cta-label">¿Hablamos?</div>
+      <p class="cta-text">Si tenés una idea, un proyecto o simplemente querés charlar sobre tecnología, escribime.</p>
+      <form class="contact-form" id="contact-form">
+        <input type="text" name="name" placeholder="Tu nombre" required minlength="2" maxlength="100" />
+        <input type="email" name="email" placeholder="Tu email (opcional)" maxlength="200" />
+        <textarea name="message" placeholder="Contame sobre tu idea, proyecto o presupuesto..." rows="4" required minlength="10" maxlength="2000"></textarea>
+        <button type="submit" class="btn-primary" id="contact-submit">Enviar mensaje</button>
+        <div class="contact-status" id="contact-status"></div>
+      </form>
+    </section>
+  </main>
+
+  <Footer locale={locale} />
+</BaseLayout>
+
+<script is:inline define:vars={{ locale }}>
+(function() {
+  var contactBtn = document.getElementById('contact-btn');
+  var contactSection = document.getElementById('contact');
+  var contactForm = document.getElementById('contact-form');
+  var contactSubmit = document.getElementById('contact-submit');
+  var contactStatus = document.getElementById('contact-status');
+
+  if (contactBtn && contactSection) {
+    contactBtn.addEventListener('click', function() {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var formData = new FormData(contactForm);
+      var name = (formData.get('name') || '').toString().trim();
+      var email = (formData.get('email') || '').toString().trim();
+      var message = (formData.get('message') || '').toString().trim();
+      if (!name || name.length < 2) return;
+      if (!message || message.length < 10) return;
+
+      contactSubmit.textContent = locale === 'es' ? 'Enviando...' : 'Sending...';
+      contactSubmit.disabled = true;
+      contactStatus.textContent = '';
+      contactStatus.className = 'contact-status';
+
+      fetch('/api/send-idea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'contact', name: name, email: email, message: message, page: 'about', language: locale })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          contactStatus.textContent = locale === 'es' ? 'Mensaje enviado! Te respondo pronto.' : 'Message sent! I\'ll reply soon.';
+          contactStatus.className = 'contact-status success';
+          contactForm.reset();
+          setTimeout(function() { contactStatus.textContent = ''; contactStatus.className = 'contact-status'; }, 5000);
+        } else {
+          throw new Error(res.error);
+        }
+      }).catch(function() {
+        contactStatus.textContent = locale === 'es' ? 'Error al enviar. Intentá de nuevo.' : 'Send failed. Please try again.';
+        contactStatus.className = 'contact-status error';
+      }).finally(function() {
+        contactSubmit.textContent = locale === 'es' ? 'Enviar mensaje' : 'Send message';
+        contactSubmit.disabled = false;
+      });
+    });
+  }
+})();
+</script>
+
+<style>
+  main { position: relative; z-index: 10; max-width: 720px; margin: 0 auto; padding: 120px 32px 100px; }
+
+  .hero { margin-bottom: 80px; }
+  .hero-label { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px; }
+  .profile-photo { width: 128px; height: 128px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-line); margin: 0 auto 20px; display: block; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+  .hero-title { font-family: var(--font-grotesk); font-size: clamp(2.4rem,5vw,3.6rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 8px; }
+  .hero-role { font-family: var(--font-mono); font-size: 14px; color: var(--color-text-dim); margin-bottom: 24px; }
+  .hero-bio { font-size: 16px; color: var(--color-text-dim); line-height: 1.7; max-width: 580px; margin-bottom: 32px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .section-label { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-faint); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 24px; }
+
+  .approach-section { margin-bottom: 80px; }
+  .approach-grid { display: grid; gap: 24px; }
+  .approach-card { border: 1px solid var(--color-line); border-radius: 8px; padding: 24px; background: var(--color-bg-panel); }
+  .approach-title { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 10px; }
+  .approach-text { font-size: 15px; color: var(--color-text-dim); line-height: 1.65; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; border-left: 1px solid var(--color-line); margin-left: 8px; padding-left: 24px; }
+  .timeline-item { position: relative; padding: 0 0 28px 0; }
+  .timeline-item::before { content: ''; position: absolute; left: -29px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
+  .timeline-item.active::before { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.6); animation: pulse-dot 2s ease-in-out infinite; }
+  .active-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; vertical-align: middle; animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(34,197,94,0.6); } 50% { opacity: 0.5; box-shadow: 0 0 4px rgba(34,197,94,0.3); } }
+  .timeline-date { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-faint); margin-bottom: 4px; }
+  .timeline-role { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .timeline-company { font-size: 14px; color: var(--color-text-dim); }
+  .timeline-company a { color: var(--color-text-dim); text-decoration: none; border-bottom: 1px solid var(--color-line); transition: color .2s, border-color .2s; }
+  .timeline-company a:hover { color: var(--color-accent); border-color: var(--color-accent-dim); }
+
+  .skills-section { margin-top: 64px; margin-bottom: 80px; }
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill-chip { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--color-line); padding: 8px 14px; border-radius: 20px; color: var(--color-text-dim); transition: border-color .2s, color .2s; }
+  .skill-chip:hover { border-color: var(--color-accent-dim); color: var(--color-text); }
+
+  .social-section { margin-bottom: 80px; }
+  .social-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .social-card { display: flex; flex-direction: column; gap: 4px; padding: 18px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-bg-panel); text-decoration: none; transition: border-color .2s, transform .15s; }
+  .social-card:hover { border-color: var(--color-accent-dim); transform: translateY(-1px); }
+  .social-name { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; color: var(--color-text); }
+  .social-handle { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-dim); }
+
+  .cta-section { text-align: center; padding: 64px 0; border-top: 1px solid var(--color-line); }
+  .cta-label { font-family: var(--font-grotesk); font-size: clamp(1.6rem,4vw,2.4rem); font-weight: 600; margin-bottom: 12px; }
+  .cta-text { font-size: 15px; color: var(--color-text-dim); line-height: 1.65; max-width: 460px; margin: 0 auto 24px; }
+
+  .contact-form { max-width: 480px; margin: 0 auto; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+  .contact-form input, .contact-form textarea { font-family: var(--font-mono); font-size: 13px; background: var(--color-bg-panel); border: 1px solid var(--color-line); border-radius: 6px; padding: 10px 14px; color: var(--color-text); outline: none; transition: border-color .2s; resize: vertical; }
+  .contact-form input:focus, .contact-form textarea:focus { border-color: var(--color-accent-dim); }
+  .contact-form textarea { min-height: 100px; }
+  .contact-form .btn-primary { align-self: flex-start; }
+  .contact-status { font-family: var(--font-mono); font-size: 12px; min-height: 18px; }
+  .contact-status.success { color: #22c55e; }
+  .contact-status.error { color: #ef4444; }
+
+  .btn-primary { display: inline-block; background: var(--color-accent); color: white; font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 10px 18px; border-radius: 6px; transition: transform .15s, box-shadow .2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.25); }
+  .btn-secondary { display: inline-block; background: transparent; color: var(--color-text-dim); border: 1px solid var(--color-line); font-family: var(--font-mono); font-size: 12px; padding: 10px 18px; border-radius: 6px; transition: border-color .2s, color .2s; }
+  .btn-secondary:hover { border-color: var(--color-text-faint); color: var(--color-text); }
+
+  .reveal { opacity: 0; transform: translateY(12px); animation: fade-up .6s ease forwards; }
+  @keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 720px) {
+    main { padding: 96px 22px 80px; }
+  }
+</style>

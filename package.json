@@ -1,0 +1,37 @@
+{
+  "name": "portfolio-astro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^11.0.3",
+    "@fontsource/space-grotesk": "^5.2.5",
+    "@fontsource/inter": "^5.2.5",
+    "@fontsource/ibm-plex-mono": "^5.2.5",
+    "@tailwindcss/vite": "^4.1.11",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
+    "astro": "^7.1.4",
+    "nodemailer": "^9.0.3",
+    "tailwindcss": "^4.1.11",
+    "three": "^0.172.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^22.15.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/three": "^0.172.0",
+    "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "path-to-regexp": "6.3.0"
+  }
+}

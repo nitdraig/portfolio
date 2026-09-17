@@ -1,0 +1,20 @@
+---
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="refresh" content="0;url=/es/" />
+    <script is:inline>
+      var projects = ["ate","flowfolio","experimental-global-app-landing","meet-my-race","around-notes-blog","around-notes-app","around-notes-landing","sigii-app","mining-talent-net","excelso-tech-group","jema-ai-impact","huellitasctg-webapp","dc-landing-page","fuddy-app","mailprex"];
+      var slug = projects[Math.floor(Math.random() * projects.length)];
+      window.location.replace("/es/projects/" + slug + "/");
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

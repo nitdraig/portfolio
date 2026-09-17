@@ -1,0 +1,31 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import HeroOrbital from "../../components/HeroOrbital.astro";
+import NarrativeSections from "../../components/NarrativeSections.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/hero.css";
+
+const locale = "en";
+---
+
+<BaseLayout locale={locale} canonicalPath="">
+  <HeroOrbital locale={locale} />
+  <div class="transition-veil" id="transition-veil"></div>
+  <NarrativeSections locale={locale} />
+  <Footer locale={locale} />
+
+  <!-- Atmosphere layers (hero only) -->
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+</BaseLayout>
+
+<style is:global>
+  .transition-veil {
+    position: fixed; inset: 0; z-index: 200; background: var(--color-bg);
+    opacity: 0; pointer-events: none; transition: opacity .5s ease;
+  }
+  .transition-veil.show { opacity: 1; pointer-events: all; }
+</style>

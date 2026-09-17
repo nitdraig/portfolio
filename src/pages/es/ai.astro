@@ -1,0 +1,167 @@
+---
+export const prerender = true;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Footer from "../../components/Footer.astro";
+
+const locale = "es";
+---
+
+<BaseLayout
+  locale={locale}
+  title="IA para productos — Agustín Avellaneda"
+  description="Construyo productos digitales con inteligencia artificial: agentes, RAG, integración de LLMs y MVPs que aprenden y escalan."
+  canonicalPath="/ai"
+>
+  <main>
+    <section class="hero">
+      <div class="hero-label">IA × PRODUCTO</div>
+      <h1 class="hero-title">IA aplicada a productos reales</h1>
+      <p class="hero-sub">
+        No uso IA como feature decorativa. La integro donde resuelve un problema concreto: reducir tiempo, automatizar decisiones repetitivas o escalar lo que un equipo pequeño no puede hacer manualmente.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-primary" href={`/${locale}/about`}>Hablemos de tu proyecto</a>
+        <a class="btn-secondary" href={`/${locale}/#proof`}>Ver casos</a>
+      </div>
+    </section>
+
+    <section class="method-section">
+      <div class="section-label">CÓMO TRABAJO</div>
+      <div class="method-grid">
+        <div class="method-card reveal">
+          <div class="method-num">01</div>
+          <div class="method-title">Mapear la oportunidad</div>
+          <p class="method-text">Identifico qué partes de tu producto se benefician de IA y cuáles se resuelven mejor con código tradicional. No todo problema es un problema de LLM.</p>
+        </div>
+        <div class="method-card reveal">
+          <div class="method-num">02</div>
+          <div class="method-title">Diseñar el contexto</div>
+          <p class="method-text">La calidad de la IA depende del contexto que le des. Diseño prompts, RAG, memoria y estructuras de datos para que el modelo devuelva valor útil.</p>
+        </div>
+        <div class="method-card reveal">
+          <div class="method-num">03</div>
+          <div class="method-title">Construir con criterio</div>
+          <p class="method-text">Integro modelos, agentes y flujos de datos dentro de una arquitectura limpia. Fullstack: desde la base de datos hasta la interfaz.</p>
+        </div>
+        <div class="method-card reveal">
+          <div class="method-num">04</div>
+          <div class="method-title">Medir y ajustar</div>
+          <p class="method-text">Cada feature de IA se instrumenta. Mido uso, costo, errores y satisfacción para iterar antes de escalar.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section">
+      <div class="section-label">QUÉ PUEDO HACER</div>
+      <div class="services-grid">
+        <div class="service-item reveal">
+          <div class="service-title">Agentes de IA</div>
+          <p class="service-text">Sistemas que ejecutan tareas multi-paso: responder emails, generar contenido, coordinar workflows o actuar sobre datos.</p>
+        </div>
+        <div class="service-item reveal">
+          <div class="service-title">RAG y bases de conocimiento</div>
+          <p class="service-text">Conecto tus documentos, datos o APIs a modelos de lenguaje para respuestas precisas basadas en tu información.</p>
+        </div>
+        <div class="service-item reveal">
+          <div class="service-title">Integración de LLMs</div>
+          <p class="service-text">OpenAI, Anthropic, Gemini o modelos open-source. Elijo el modelo correcto por tarea, presupuesto y latencia.</p>
+        </div>
+        <div class="service-item reveal">
+          <div class="service-title">MVPs con IA</div>
+          <p class="service-text">Productos funcionales en semanas donde la IA es el core diferenciador desde el día uno.</p>
+        </div>
+        <div class="service-item reveal">
+          <div class="service-title">Context Engineering</div>
+          <p class="service-text">Método propio para estructurar prompts, memoria y contexto. Menos alucinaciones, más resultados útiles.</p>
+        </div>
+        <div class="service-item reveal">
+          <div class="service-title">Automatización inteligente</div>
+          <p class="service-text">Procesos que antes requerían personas ahora corren con supervisión humana: clasificación, resumen, extracción y decisión.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cases-section">
+      <div class="section-label">CASOS</div>
+      <div class="cases-list">
+        <a class="case-card reveal" href={`/${locale}/projects/flowfolio/`}>
+          <div class="case-title">Flowfolio</div>
+          <p class="case-text">Agente de IA para freelancers que gestiona clientes, proyectos, tareas, tiempo y facturas por conversación.</p>
+          <span class="case-link">Ver proyecto →</span>
+        </a>
+        <a class="case-card reveal" href={`/${locale}/projects/jema-ai-impact/`}>
+          <div class="case-title">JEMA</div>
+          <p class="case-text">Plataforma que mide impacto ambiental y social usando IA para procesar datos complejos y generar reportes accionables.</p>
+          <span class="case-link">Ver proyecto →</span>
+        </a>
+        <a class="case-card reveal" href={`/${locale}/projects/sigii-app/`}>
+          <div class="case-title">Sigii</div>
+          <p class="case-text">Asistente nutricional que recomienda recetas personalizadas según ingredientes, alergias y preferencias del usuario.</p>
+          <span class="case-link">Ver proyecto →</span>
+        </a>
+        <a class="case-card reveal" href={`/${locale}/projects/around-notes-app/`}>
+          <div class="case-title">Around Notes</div>
+          <p class="case-text">Notas inteligentes para reuniones: transcripción, resumen y extracción de accionables con modelos de lenguaje.</p>
+          <span class="case-link">Ver proyecto →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="cta-section" id="contact">
+      <div class="cta-label">¿TU PRODUCTO NECESITA IA?</div>
+      <p class="cta-text">Contame qué querés resolver. En una primera conversación te digo si la IA aporta valor real o si conviene otro camino.</p>
+      <a class="btn-primary" href={`/${locale}/about`}>Agendar conversación</a>
+    </section>
+  </main>
+
+  <Footer locale={locale} />
+</BaseLayout>
+
+<style>
+  main { position: relative; z-index: 10; max-width: 820px; margin: 0 auto; padding: 120px 32px 100px; }
+
+  .hero { margin-bottom: 80px; }
+  .hero-label { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 16px; }
+  .hero-title { font-family: var(--font-grotesk); font-size: clamp(2.4rem,5vw,3.6rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 20px; }
+  .hero-sub { font-size: 17px; color: var(--color-text-dim); line-height: 1.7; max-width: 640px; margin-bottom: 32px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .section-label { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-faint); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 24px; }
+
+  .method-section { margin-bottom: 80px; }
+  .method-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .method-card { border: 1px solid var(--color-line); border-radius: 8px; padding: 24px; background: var(--color-bg-panel); }
+  .method-num { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); margin-bottom: 10px; }
+  .method-title { font-family: var(--font-grotesk); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+  .method-text { font-size: 14px; color: var(--color-text-dim); line-height: 1.6; }
+
+  .services-section { margin-bottom: 80px; }
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .service-item { padding: 20px; border-left: 2px solid var(--color-accent-dim); }
+  .service-title { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .service-text { font-size: 14px; color: var(--color-text-dim); line-height: 1.6; }
+
+  .cases-section { margin-bottom: 80px; }
+  .cases-list { display: flex; flex-direction: column; gap: 12px; }
+  .case-card { display: block; background: var(--color-bg-panel); border: 1px solid var(--color-line); border-radius: 8px; padding: 22px; text-decoration: none; transition: border-color .2s, transform .15s; }
+  .case-card:hover { border-color: var(--color-accent-dim); transform: translateY(-1px); }
+  .case-title { font-family: var(--font-grotesk); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .case-text { font-size: 14px; color: var(--color-text-dim); line-height: 1.6; margin-bottom: 12px; }
+  .case-link { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); }
+
+  .cta-section { text-align: center; padding: 48px 32px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-bg-panel); }
+  .cta-label { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 16px; }
+  .cta-text { font-size: 16px; color: var(--color-text-dim); line-height: 1.65; max-width: 520px; margin: 0 auto 28px; }
+
+  .btn-primary { display: inline-block; background: var(--color-accent); color: white; font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 12px 22px; border-radius: 6px; transition: transform .15s, box-shadow .2s; text-decoration: none; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.25); }
+  .btn-secondary { display: inline-block; background: transparent; color: var(--color-text-dim); border: 1px solid var(--color-line); font-family: var(--font-mono); font-size: 12px; padding: 12px 22px; border-radius: 6px; transition: border-color .2s, color .2s; text-decoration: none; }
+  .btn-secondary:hover { border-color: var(--color-text-faint); color: var(--color-text); }
+
+  @media (max-width: 720px) {
+    main { padding: 96px 22px 80px; }
+    .hero { margin-bottom: 64px; }
+    .method-section, .services-section, .cases-section { margin-bottom: 64px; }
+  }
+</style>

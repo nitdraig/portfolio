@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { ui } from "../i18n/ui";
+import { getLangFromUrl } from "../i18n/utils";
+
+const locale = getLangFromUrl(Astro.url);
+const t = ui[locale].notFound;
+const home = `/${locale}/`;
+---
+
+<BaseLayout locale={locale} title={`${t.title} | Agustín Avellaneda`} canonicalPath="">
+  <main class="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+    <h1 class="text-6xl font-bold text-gray-800 mb-4">{t.title}</h1>
+    <p class="text-lg text-gray-600 mb-8">{t.message}</p>
+    <a
+      href={home}
+      class="px-6 rounded-md py-2 bg-black text-white hover:bg-gray-800 transition"
+    >
+      {t.backHome}
+    </a>
+  </main>
+</BaseLayout>

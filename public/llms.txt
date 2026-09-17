@@ -1,0 +1,47 @@
+# Agustín Avellaneda — AI-Powered Fullstack Developer & PM
+
+URL: https://www.agustin.top
+Email: me@agustin.top
+Location: Catamarca, Argentina (remote / worldwide)
+
+## About
+
+Agustín Avellaneda is a product-minded fullstack developer and project manager with 9+ years shipping digital products. Started as a Mining Technician in Argentina; transitioned to tech through self-learning and real projects. Founder of Excelso (https://excelso.xyz). Builds MVPs in 2-4 weeks, works directly with founders and product leads, and combines AI tools with solid engineering to reduce time-to-value.
+
+## What I do
+
+- AI-powered fullstack development (React, Next.js, Astro, Node.js, Express, Fastify, TypeScript)
+- Product management and technical discovery
+- MVPs that ship in weeks, not months
+- Onboarding flows, dashboards with actionable metrics, event-based notifications
+- Landing pages for ideas, projects and companies
+- B2B SaaS, marketplaces, internal tools, fintech, healthtech and education products
+
+## Featured projects
+
+- Around Notes — AI note-taking for meetings and research (aroundnotes.ai)
+- Flowfolio — AI agent for freelancers to manage clients, projects, invoices and time (flowfolio.space)
+- Sigii — AI nutrition assistant for recipes, allergies and preferences
+- JEMA — AI platform for measuring environmental and social impact
+- Mining Talent Net — recruitment platform for the mining industry
+- Mailprex — form-to-email service for developers (mailprex.excelso.xyz)
+- Fuddy — event and booking management platform
+- Excelso Tech Group — product studio landing and tools
+- Huellitas CTGNA — NGO website for pet rescue and adoption
+- DC Consultora — corporate website and digital presence
+
+## Skills
+
+TypeScript, React, Next.js, Astro, Node.js, Express, Fastify, MongoDB, PostgreSQL, Tailwind CSS, Python, AI integration, OpenAI, LangChain, Product Management, Agile, UI/UX design, Vercel, AWS, Docker.
+
+## Links
+
+- Portfolio: https://www.agustin.top
+- GitHub: https://github.com/nitdraig
+- LinkedIn: https://www.linkedin.com/in/avellaneda-agustin/
+- Blog: https://blog.agustin.top
+- Excelso: https://excelso.xyz
+
+## Contact
+
+Use the contact form on /about or email me@agustin.top. I read every message and usually reply within 24-48 hours.

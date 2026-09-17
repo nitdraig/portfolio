@@ -1,0 +1,16 @@
+{
+  "name": "Agustín Avellaneda — AI-Powered Fullstack Developer & PM",
+  "short_name": "Agustín Avellaneda",
+  "description": "Portfolio of Agustín Avellaneda: fullstack developer, product manager and AI specialist building shipped digital products.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "lang": "es"
+}
