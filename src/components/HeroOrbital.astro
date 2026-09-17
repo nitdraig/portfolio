@@ -163,6 +163,44 @@ const PROJECTS = getNodeProjects(locale);
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function formatPitchQuotes(str) {
+    return String(str)
+      .replace(/(te propongo|I propose)\s+'([^']+)'/gi, '$1 "$2"')
+      .replace(/'([A-Za-zÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑ0-9-]{1,40})'/g, '"$1"');
+  }
+
+  var ATTEMPT_STORE = 'agustinIdeaAttempts';
+  var MAX_CLIENT_ATTEMPTS = 8;
+  var ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
+
+  function readAttemptTimes() {
+    try {
+      var raw = sessionStorage.getItem(ATTEMPT_STORE);
+      var data = raw ? JSON.parse(raw) : { times: [] };
+      var now = Date.now();
+      return (data.times || []).filter(function(t) { return now - t < ATTEMPT_WINDOW_MS; });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function canAttemptAnalysis() {
+    return readAttemptTimes().length < MAX_CLIENT_ATTEMPTS;
+  }
+
+  function recordAnalysisAttempt() {
+    var times = readAttemptTimes();
+    times.push(Date.now());
+    sessionStorage.setItem(ATTEMPT_STORE, JSON.stringify({ times: times }));
+    return times.length;
+  }
+
+  function attemptLimitMessage() {
+    return currentLocale === 'es'
+      ? 'Demasiados intentos. Probá de nuevo en unos minutos.'
+      : 'Too many attempts. Try again in a few minutes.';
+  }
+
   function getText(val) {
     if (val && typeof val === 'object') {
       if (val[currentLocale]) return val[currentLocale];
@@ -310,22 +348,18 @@ const PROJECTS = getNodeProjects(locale);
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function shuffle(arr) { var a = arr.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = a[i]; a[i] = a[j]; a[j] = tmp; } return a; }
 
-  function generateFallbackAnalysis(text, lang) {
-    var lower = text.toLowerCase();
-    var verb = lower.match(/connect|track|manage|share|find|match|automate|build|launch/);
-    var v = verb ? verb[0] : (lang === 'es' ? 'construye' : 'builds');
-    var clean = text.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '');
+  function proposeProductName(text) {
+    var words = String(text).replace(/[^\wáéíóúñ\s]/gi, ' ').split(/\s+/).filter(function(w) { return w.length > 3; });
+    var base = words[0] || 'Idea';
+    return base.charAt(0).toUpperCase() + base.slice(1, 14);
+  }
 
-    var polishedEs = [
-      'Una plataforma que ' + v + ' ' + clean + ', diseñada para escalar con un enfoque lean y centrada en el usuario desde el primer día.',
-      'Una solución digital para ' + clean + ', pensada para resolver un problema real con la herramienta más simple posible.',
-      'Un producto que ataca el problema de ' + clean + ', con una MVP rápida y un camino claro hacia la iteración.',
-    ];
-    var polishedEn = [
-      'A platform that ' + v + ' ' + clean + ', designed to scale with a lean approach and user-first from day one.',
-      'A digital solution for ' + clean + ', built to solve a real problem with the simplest possible tool.',
-      'A product tackling ' + clean + ', with a fast MVP and a clear path toward iteration.',
-    ];
+  function generateFallbackAnalysis(text, lang) {
+    var clean = text.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '');
+    var name = proposeProductName(clean);
+    var polishedEs = 'Explorador, te propongo "' + name + '": una app sencilla que ' + clean + ', empezando por una sola zona y un solo tipo de uso.';
+    var polishedEn = 'Explorer, I propose "' + name + '": a simple app for ' + clean + ', starting with one area and one type of use.';
+    var polished = formatPitchQuotes(lang === 'es' ? polishedEs : polishedEn);
 
     var stepsEs = [
       ['Validar la hipótesis central con 5 usuarios reales', 'Diseñar el flujo más simple que entregue valor', 'Construir un MVP funcional en 2-4 semanas', 'Lanzar a early adopters y capturar feedback', 'Iterar sobre el punto de mayor fricción antes de agregar features'],
@@ -350,7 +384,7 @@ const PROJECTS = getNodeProjects(locale);
     ];
 
     return {
-      idea: pick(lang === 'es' ? polishedEs : polishedEn),
+      idea: polished,
       steps: pick(lang === 'es' ? stepsEs : stepsEn),
       mvp: pick(lang === 'es' ? mvpEs : mvpEn),
     };
@@ -370,6 +404,8 @@ const PROJECTS = getNodeProjects(locale);
     if (offTopicRe.test(val)) { showCmdbarError(currentLocale === 'es' ? 'Este analizador solo acepta ideas de proyectos.' : 'This analyzer only accepts project ideas.'); return; }
     var wordCount = val.split(/\s+/).filter(function(w) { return /[a-zA-Záéíóúñ]/.test(w); }).length;
     if (wordCount < 2) { showCmdbarError(currentLocale === 'es' ? 'Describí tu idea con un poco más de detalle.' : 'Describe your idea with a bit more detail.'); return; }
+    if (!canAttemptAnalysis()) { showCmdbarError(attemptLimitMessage()); return; }
+    recordAnalysisAttempt();
     /* --- End client-side validation --- */
 
     isAnalyzing = true;
@@ -402,7 +438,7 @@ const PROJECTS = getNodeProjects(locale);
         idea: val,
         tags: tags,
         source: 'api',
-        polishedIdea: data.polishedIdea || data.idea || '',
+        polishedIdea: formatPitchQuotes(data.polishedIdea || data.idea || ''),
         steps: data.steps || [],
         mvp: data.mvp || [],
         projects: projects.map(function(p) { return { id: p.id, title: p.title, category: p.category, type: p.type, slug: p.slug }; })
@@ -423,7 +459,7 @@ const PROJECTS = getNodeProjects(locale);
         idea: val,
         tags: tags,
         source: isRateLimit ? 'rate_limit' : 'fallback',
-        polishedIdea: fallback.idea,
+        polishedIdea: formatPitchQuotes(fallback.idea),
         steps: fallback.steps,
         mvp: fallback.mvp,
         projects: projects.map(function(p) { return { id: p.id, title: p.title, category: p.category, type: p.type, slug: p.slug }; })
@@ -1063,6 +1099,15 @@ const PROJECTS = getNodeProjects(locale);
       var text = nodeIdeaInput.value.trim();
       if (!text || !currentNodeKey) return;
       if (text.length < 3 || text.length > 2000) return;
+      if (!canAttemptAnalysis()) {
+        aiResultPitch.textContent = attemptLimitMessage();
+        aiResultChips.innerHTML = '';
+        aiResultSteps.innerHTML = '';
+        aiResult.classList.add('show');
+        mode = 'result';
+        return;
+      }
+      recordAnalysisAttempt();
       var injectionRe = /ignore\s+(all\s+)?(previous|prior|above)|disregard\s+(all\s+)?(previous|prior)|you\s+are\s+now\s+(a|an)|act\s+as\s+(a|an)\s+(different|new)|from\s+now\s+on\s+(you\s+)?(will|must|are)|pretend\s+(you\s+)?(are|to\s+be)/i;
       if (injectionRe.test(text)) return;
       var offTopicRe = /what\s+(model|ai|llm|gpt|claude)\s+are\s+you|who\s+(made|created|built)\s+you|write\s+(me\s+)?(a\s+)?(poem|song|story)|tell\s+me\s+(a\s+)?joke/i;
@@ -1086,7 +1131,7 @@ const PROJECTS = getNodeProjects(locale);
       }).then(function(result) {
         var pitch, components, steps;
         if (result.success && result.data) {
-          pitch = result.data.polishedIdea || result.data.idea || text;
+          pitch = formatPitchQuotes(result.data.polishedIdea || result.data.idea || text);
           components = result.data.tags || tags.slice(0, 5);
           steps = result.data.steps || [];
         } else {
@@ -1096,11 +1141,11 @@ const PROJECTS = getNodeProjects(locale);
       }).catch(function() {
         /* Fallback: local generation when API unreachable */
         var lower = text.toLowerCase();
-        var verbs = lower.match(/\b(connect|track|manage|share|find|match|pay|automate|build|launch|monitor|analyze|book|schedule|order|deliver|learn|teach|design|create)\b/g) || [];
-        var mainVerb = verbs[0] || enrichment.verbs[0];
-        var pitch = (currentLocale === 'es'
-          ? 'Una ' + enrichment.lens.toLowerCase() + ' que ' + mainVerb + ' ' + lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '') + '. ' + enrichment.angle
-          : 'A ' + enrichment.lens.toLowerCase() + ' product that ' + mainVerb + 's ' + lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '') + '. ' + enrichment.angle);
+        var clean = lower.replace(/^(i want to|quiero|me gustaría|i would like to|i need to)\s*/i, '').replace(/\.$/, '');
+        var name = proposeProductName(clean);
+        var pitch = formatPitchQuotes(currentLocale === 'es'
+          ? 'Explorador, te propongo "' + name + '": una app sencilla que ' + clean + ', empezando por una sola zona y un solo tipo de uso.'
+          : 'Explorer, I propose "' + name + '": a simple app for ' + clean + ', starting with one area and one type of use.');
         var components = Array.from(new Set(tags.slice(0,3).concat(enrichment.verbs.slice(0,2).map(function(v) { return v.toUpperCase(); }))));
         var steps = currentLocale === 'es'
           ? ['Validar la hipótesis con 5 usuarios reales', 'Apply the '+currentNodeKey+' lens: '+enrichment.angle.toLowerCase(), 'Construir MVP funcional en 2-4 semanas', 'Lanzar y medir engagement real']
@@ -1113,12 +1158,13 @@ const PROJECTS = getNodeProjects(locale);
     var _lastNodeIdea = { pitch: '', components: [], steps: [], originalText: '' };
 
     function renderNodeResult(pitch, components, steps, originalText, enrichment) {
+      var safePitch = formatPitchQuotes(pitch);
       var componentsArr = Array.isArray(components) ? components : [];
       var stepsArr = Array.isArray(steps) ? steps : [];
       aiResultChips.innerHTML = componentsArr.map(function(c,i) { return '<span class="reveal-item" style="animation-delay:'+i*60+'ms">'+c+'</span>'; }).join('');
       aiResultSteps.innerHTML = stepsArr.map(function(s,i) { return '<li class="reveal-item" style="animation-delay:'+i*100+'ms">'+s+'</li>'; }).join('');
-      _lastNodeIdea = { pitch: pitch, components: componentsArr, steps: stepsArr, originalText: originalText };
-      typeText(aiResultPitch, pitch, 14);
+      _lastNodeIdea = { pitch: safePitch, components: componentsArr, steps: stepsArr, originalText: originalText };
+      typeText(aiResultPitch, safePitch, 14);
     }
 
     nodeIdeaSubmit.addEventListener('click', runNodeAnalysis);

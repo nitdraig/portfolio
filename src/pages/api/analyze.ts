@@ -1,6 +1,10 @@
 import type { APIRoute } from "astro";
 import { getEnv } from "../../lib/env";
-import { checkAnalyzeRateLimit } from "../../lib/analyze/rateLimit";
+import {
+  checkAnalyzeAttemptLimit,
+  checkAnalyzeRequestLimit,
+} from "../../lib/analyze/rateLimit";
+import { formatPitchQuotes } from "../../lib/analyze/formatPitch";
 import { isSameOriginRequest } from "../../lib/contact/origin";
 import { sanitizeInput, looksLikeIdea, getRejectionMessage } from "../../lib/analyze/sanitize";
 
@@ -20,6 +24,31 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
+function rateLimitMessage(
+  kind: "attempt" | "request",
+  language: "es" | "en",
+): string {
+  if (kind === "attempt") {
+    return language === "es"
+      ? "Demasiados intentos. Probá de nuevo en unos minutos."
+      : "Too many attempts. Try again in a few minutes.";
+  }
+  return language === "es"
+    ? "Demasiadas peticiones. Probá de nuevo más tarde."
+    : "Too many requests. Try again later.";
+}
+
+function formatAnalyzePayload(data: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...data };
+  if (typeof next.polishedIdea === "string") {
+    next.polishedIdea = formatPitchQuotes(next.polishedIdea);
+  }
+  if (typeof next.idea === "string") {
+    next.idea = formatPitchQuotes(next.idea);
+  }
+  return next;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   // --- CORS: only accept same-origin or same-site requests ---
   if (!isSameOriginRequest(request)) {
@@ -29,21 +58,22 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  // --- Rate limit by IP ---
   const ip = getClientIp(request);
-  const rl = await checkAnalyzeRateLimit(ip);
-  if (!rl.allowed) {
+
+  // --- Attempt limit by IP (every POST counts) ---
+  const attemptRl = await checkAnalyzeAttemptLimit(ip);
+  if (!attemptRl.allowed) {
     return Response.json(
       {
         success: false,
         error: "rate_limit",
-        message: "Too many requests. Try again later.",
+        message: rateLimitMessage("attempt", "es"),
       } satisfies AnalyzeResult,
       {
         status: 429,
         headers: {
-          "Retry-After": String(Math.ceil(rl.resetMs / 1000)),
-          "X-RateLimit-Remaining": String(rl.remaining),
+          "Retry-After": String(Math.ceil(attemptRl.resetMs / 1000)),
+          "X-RateLimit-Remaining": String(attemptRl.remaining),
         },
       },
     );
@@ -92,6 +122,25 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
+  // --- Request limit by IP (upstream calls) ---
+  const requestRl = await checkAnalyzeRequestLimit(ip);
+  if (!requestRl.allowed) {
+    return Response.json(
+      {
+        success: false,
+        error: "rate_limit",
+        message: rateLimitMessage("request", language),
+      } satisfies AnalyzeResult,
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(requestRl.resetMs / 1000)),
+          "X-RateLimit-Remaining": String(requestRl.remaining),
+        },
+      },
+    );
+  }
+
   // --- Auth token ---
   const apiToken = getEnv("PORTFOLIO_API_TOKEN");
   const upstreamUrl = getEnv("PORTFOLIO_API_URL") || "https://api.flowfolio.space/portfolio/idea";
@@ -108,6 +157,11 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
+  const pitchStyle =
+    language === "es"
+      ? 'Explorador, te propongo "{Nombre}": una app sencilla que resuelve un problema concreto, empezando por un solo alcance.'
+      : 'Explorer, I propose "{Name}": a simple app that solves one concrete problem, starting with a single scope.';
+
   // --- Forward sanitized input to upstream API ---
   try {
     const upstreamRes = await fetch(upstreamUrl, {
@@ -120,6 +174,7 @@ export const POST: APIRoute = async ({ request }) => {
         name: "Explorador",
         projectIdea: sanitized.clean,
         language,
+        pitchStyle,
       }),
       signal: AbortSignal.timeout(15000),
     });
@@ -138,7 +193,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const data = await upstreamRes.json();
-    return Response.json({ success: true, data: data.data || data } satisfies AnalyzeResult);
+    const payload = formatAnalyzePayload(
+      (data.data || data) as Record<string, unknown>,
+    );
+    return Response.json({ success: true, data: payload } satisfies AnalyzeResult);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Upstream fetch failed";
     console.error("[analyze] Upstream error", msg);

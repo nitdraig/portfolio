@@ -31,6 +31,11 @@ const locale = "es";
       .replace(/&gt;/gi, '>')
       .replace(/&amp;/gi, '&');
   }
+  function formatPitchQuotes(str) {
+    return String(str)
+      .replace(/(te propongo|I propose)\s+'([^']+)'/gi, '$1 "$2"')
+      .replace(/'([A-Za-zÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑ0-9-]{1,40})'/g, '"$1"');
+  }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
   function renderAnalysis() {
@@ -48,7 +53,7 @@ const locale = "es";
       return decodeEntities(text);
     };
     data.idea = s(data.idea);
-    if (data.polishedIdea) data.polishedIdea = s(data.polishedIdea);
+    if (data.polishedIdea) data.polishedIdea = formatPitchQuotes(s(data.polishedIdea));
     if (Array.isArray(data.tags)) data.tags = data.tags.map(s);
     if (Array.isArray(data.steps)) data.steps = data.steps.map(s);
     if (Array.isArray(data.mvp)) data.mvp = data.mvp.map(s);
@@ -83,7 +88,7 @@ const locale = "es";
       return '<a class="stage-card" href="/' + locale + '/projects/' + (p.slug || '') + '/"><div class="stage-card-head"><span class="stage-card-title">' + escapeHtml(p.title) + '</span><span class="stage-card-view">Ver →</span></div><div class="stage-card-meta">' + escapeHtml(p.category || '') + ' · ' + escapeHtml(p.type || '') + '</div></a>';
     }).join('');
 
-    var polishedHtml = data.polishedIdea ? '<section class="stage-section reveal" style="animation-delay:180ms"><div class="stage-section-title">Idea pulida</div><div class="stage-text">' + escapeHtml(data.polishedIdea) + '</div></section>' : '';
+    var headline = data.polishedIdea || data.idea;
     var mvpHtml = (data.mvp || []).map(function(item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('');
     var stepsHtml = (data.steps || []).map(function(item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('');
     var tagsHtml = (data.tags || []).map(function(t) { return '<span>' + escapeHtml(t) + '</span>'; }).join('');
@@ -91,9 +96,8 @@ const locale = "es";
     mainEl.insertAdjacentHTML('beforeend',
       fallbackBanner +
       '<div class="stage-label reveal" style="animation-delay:40ms">ANÁLISIS DE IDEA</div>' +
-      '<h1 class="stage-title reveal" style="animation-delay:80ms">' + escapeHtml(data.idea) + '</h1>' +
-      polishedHtml +
-      '<section class="stage-section reveal" style="animation-delay:220ms"><div class="stage-section-title">Lo que dijiste</div><div class="stage-text">' + escapeHtml(data.idea) + '</div></section>' +
+      '<h1 class="stage-title reveal" style="animation-delay:80ms">' + escapeHtml(headline) + '</h1>' +
+      '<section class="stage-section reveal" style="animation-delay:180ms"><div class="stage-section-title">Lo que dijiste</div><div class="stage-text">' + escapeHtml(data.idea) + '</div></section>' +
       '<section class="stage-section reveal" style="animation-delay:280ms"><div class="stage-section-title">Componentes inferidos</div><div class="stage-chips">' + tagsHtml + '</div></section>' +
       (stepsHtml ? '<section class="stage-section reveal" style="animation-delay:340ms"><div class="stage-section-title">Próximos pasos</div><ul class="stage-list">' + stepsHtml + '</ul></section>' : '') +
       '<section class="stage-section reveal" style="animation-delay:420ms"><div class="stage-section-title">Proyectos que puedes explorar</div><div class="stage-cards">' + (projectsHtml || '<div class="stage-text">No hay coincidencias directas en el portfolio aún — esta idea es una dirección nueva.</div>') + '</div></section>' +
