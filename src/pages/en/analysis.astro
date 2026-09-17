@@ -20,6 +20,17 @@ const locale = "en";
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function(c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; });
   }
+  function decodeEntities(str) {
+    return String(str)
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;/g, "'")
+      .replace(/&#x0*27;/gi, "'")
+      .replace(/&apos;/gi, "'")
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&amp;/gi, '&');
+  }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
   function renderAnalysis() {
@@ -31,8 +42,11 @@ const locale = "en";
     try { data = JSON.parse(raw); } catch(e) { data = null; }
     if (!data || !data.idea || typeof data.idea !== 'string') { emptyEl.classList.add('show'); return; }
 
-    /* Sanitize: strip any HTML from stored data */
-    var s = function(str) { return String(str).replace(/<[^>]*>/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); };
+    /* Strip tags and decode entities; escapeHtml runs once at render time */
+    var s = function(str) {
+      var text = decodeEntities(String(str)).replace(/<[^>]*>/g, '');
+      return decodeEntities(text);
+    };
     data.idea = s(data.idea);
     if (data.polishedIdea) data.polishedIdea = s(data.polishedIdea);
     if (Array.isArray(data.tags)) data.tags = data.tags.map(s);
