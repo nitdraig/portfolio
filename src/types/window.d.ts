@@ -1,7 +1,16 @@
 export {};
 
+type AnalysisPdfWindowPayload = {
+  locale: string;
+  idea?: string;
+  polishedIdea?: string;
+  tags?: string[];
+  steps?: string[];
+  mvp?: string[];
+};
+
 declare global {
   interface Window {
-    downloadAnalysisPdf?: (locale: string, polishedIdea?: string) => void;
+    downloadAnalysisPdf?: (payload: AnalysisPdfWindowPayload) => void;
   }
 }

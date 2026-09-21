@@ -178,7 +178,14 @@ const locale = "es";
     }
     function triggerPdfDownload() {
       if (typeof window.downloadAnalysisPdf === 'function') {
-        window.downloadAnalysisPdf(locale, data.polishedIdea || data.idea || '');
+        window.downloadAnalysisPdf({
+          locale: locale,
+          idea: data.idea || '',
+          polishedIdea: data.polishedIdea || '',
+          tags: data.tags || [],
+          steps: data.steps || [],
+          mvp: data.mvp || []
+        });
       }
     }
 
@@ -422,11 +429,20 @@ const locale = "es";
   </script>
 
   <script>
-    import { buildAnalysisThankYouPdf, downloadSimplePdf } from "../../lib/pdf/simplePdf";
+    import {
+      downloadAnalysisPdf,
+      type AnalysisPdfPayload,
+    } from "../../lib/pdf/simplePdf";
 
-    window.downloadAnalysisPdf = function (locale: string, polishedIdea?: string) {
-      const lang = locale === "en" ? "en" : "es";
-      downloadSimplePdf(buildAnalysisThankYouPdf(lang, polishedIdea));
+    window.downloadAnalysisPdf = function (payload: AnalysisPdfPayload) {
+      void downloadAnalysisPdf({
+        locale: payload.locale === "en" ? "en" : "es",
+        idea: payload.idea || "",
+        polishedIdea: payload.polishedIdea || "",
+        tags: payload.tags || [],
+        steps: payload.steps || [],
+        mvp: payload.mvp || [],
+      });
     };
   </script>
 </BaseLayout>
