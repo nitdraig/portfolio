@@ -40,6 +40,16 @@ const PROJECTS = getNodeProjects(locale);
     <div class="cmdbar-modal" id="cmdbar-modal" aria-hidden="true">
       <button class="cmdbar-modal-close" id="cmdbar-modal-close" type="button">{t.closeBtn}</button>
       <div class="cmdbar-modal-shell" id="cmdbar-modal-shell">
+        <div class="cmdbar-modal-toolbar">
+          <button type="button" class="cmdbar-how-btn" id="cmdbar-how-btn" aria-expanded="false" aria-controls="cmdbar-how-panel">{t.howItWorks}</button>
+        </div>
+        <div class="cmdbar-how-panel" id="cmdbar-how-panel" hidden>
+          <div class="cmdbar-how-title">{t.howItWorksTitle}</div>
+          <ul class="cmdbar-how-list">
+            {t.howItWorksBody.map((item: string) => <li>{item}</li>)}
+          </ul>
+          <button type="button" class="btn-secondary cmdbar-how-close" id="cmdbar-how-close">{t.howItWorksClose}</button>
+        </div>
         <textarea id="cmd-modal-input" placeholder={t.modalPlaceholder} autocomplete="off"></textarea>
         <div class="cmdbar-modal-hint">
           <span>{t.modalHint}</span>
@@ -306,6 +316,10 @@ const PROJECTS = getNodeProjects(locale);
     cmdModal.classList.remove('show');
     cmdModal.setAttribute('aria-hidden','true');
     cmdInput.value = cmdModalInput.value;
+    var howPanelEl = document.getElementById('cmdbar-how-panel');
+    var howBtnEl = document.getElementById('cmdbar-how-btn');
+    if (howPanelEl) howPanelEl.hidden = true;
+    if (howBtnEl) howBtnEl.setAttribute('aria-expanded', 'false');
     var scrollY = document.body.style.top;
     document.body.style.overflow = '';
     document.body.style.position = '';
@@ -343,6 +357,23 @@ const PROJECTS = getNodeProjects(locale);
   cmdModalClose.addEventListener('click', closeCmdbarModal);
   cmdModalSend.addEventListener('click', () => { cmdForm.dispatchEvent(new Event('submit')); });
   cmdModal.addEventListener('click', (e) => { if (e.target === cmdModal && !cmdModalInput.value.trim()) closeCmdbarModal(); });
+
+  var howBtn = document.getElementById('cmdbar-how-btn');
+  var howPanel = document.getElementById('cmdbar-how-panel');
+  var howClose = document.getElementById('cmdbar-how-close');
+  function setHowPanelOpen(open) {
+    if (!howPanel || !howBtn) return;
+    howPanel.hidden = !open;
+    howBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  if (howBtn) {
+    howBtn.addEventListener('click', function() {
+      setHowPanelOpen(howPanel ? howPanel.hidden : false);
+    });
+  }
+  if (howClose) {
+    howClose.addEventListener('click', function() { setHowPanelOpen(false); });
+  }
 
   /* Local fallback when API is unreachable or rate-limited */
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }

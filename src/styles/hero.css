@@ -58,6 +58,16 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
 .cmdbar-modal textarea::placeholder { color: var(--color-text-faint); }
 .cmdbar-modal-hint { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-faint); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .cmdbar-modal-hint b { color: var(--color-text-dim); font-weight: 500; }
+.cmdbar-modal-toolbar { display: flex; justify-content: flex-start; }
+.cmdbar-how-btn { font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); border: 1px solid var(--color-accent-dim); background: transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+.cmdbar-how-btn:hover, .cmdbar-how-btn[aria-expanded="true"] { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+.cmdbar-how-panel { border: 1px solid var(--color-line); border-radius: 10px; background: var(--color-bg); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.cmdbar-how-panel[hidden] { display: none; }
+.cmdbar-how-title { font-family: var(--font-grotesk); font-size: 15px; font-weight: 600; color: var(--color-text); }
+.cmdbar-how-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.cmdbar-how-list li { font-size: 13px; color: var(--color-text-dim); line-height: 1.55; padding-left: 16px; position: relative; }
+.cmdbar-how-list li::before { content: '→'; position: absolute; left: 0; color: var(--color-accent); font-family: var(--font-mono); font-size: 11px; top: 2px; }
+.cmdbar-how-close { align-self: flex-start; }
 .cmdbar-modal-powered { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-family: var(--font-mono); font-size: 13px; color: var(--color-text-faint); opacity: .6; }
 .cmdbar-modal-powered img { height: 20px; width: auto; filter: brightness(.8); transition: filter .2s; }
 .cmdbar-modal-powered a { color: inherit; display: flex; align-items: center; gap: 6px; }
@@ -66,7 +76,11 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
 .cmdbar-modal-close:hover { border-color: var(--color-text-faint); color: var(--color-text); }
 .cmdbar-modal-loading { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 90px 20px; text-align: center; }
 .cmdbar-modal-shell.loading .cmdbar-modal-loading { display: flex; }
-.cmdbar-modal-shell.loading textarea, .cmdbar-modal-shell.loading .cmdbar-modal-hint, .cmdbar-modal-shell.loading .cmdbar-modal-powered { display: none; }
+.cmdbar-modal-shell.loading textarea,
+.cmdbar-modal-shell.loading .cmdbar-modal-hint,
+.cmdbar-modal-shell.loading .cmdbar-modal-powered,
+.cmdbar-modal-shell.loading .cmdbar-modal-toolbar,
+.cmdbar-modal-shell.loading .cmdbar-how-panel { display: none; }
 .cmdbar-modal-loading-text { font-family: var(--font-grotesk); font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 600; letter-spacing: 0.04em; color: var(--color-text-dim); }
 
 .ai-readout { margin-top: 16px; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-dim); min-height: 18px; display: flex; align-items: center; gap: 12px; }

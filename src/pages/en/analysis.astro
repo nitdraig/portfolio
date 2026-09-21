@@ -16,6 +16,60 @@ const locale = "en";
     </div>
   </main>
 
+  <div class="mvp-panel" id="mvp-panel" aria-hidden="true" role="dialog" aria-labelledby="mvp-panel-title">
+    <div class="mvp-panel-backdrop" id="mvp-panel-backdrop"></div>
+    <div class="mvp-panel-shell">
+      <button class="mvp-panel-close" id="mvp-panel-close" type="button" aria-label="Close">Close</button>
+      <div class="mvp-panel-label">NEXT STEP</div>
+      <h2 class="mvp-panel-title" id="mvp-panel-title">Let's build this MVP</h2>
+      <p class="mvp-panel-hint">Leave a message and how to reach you. I'll get the analysis and reply within 24-48 hours.</p>
+      <form class="mvp-panel-form" id="mvp-panel-form">
+        <label class="mvp-field">
+          <span>Your message</span>
+          <textarea id="mvp-message" name="message" rows="4" maxlength="2000" placeholder="Share context, timeline, or what you want to build…"></textarea>
+        </label>
+        <div class="mvp-field-row">
+          <label class="mvp-field">
+            <span>Email</span>
+            <input id="mvp-email" name="email" type="email" autocomplete="email" placeholder="you@email.com" />
+          </label>
+          <label class="mvp-field">
+            <span>WhatsApp</span>
+            <input id="mvp-phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 …" />
+          </label>
+        </div>
+        <p class="mvp-panel-note">I need at least an email or a WhatsApp number.</p>
+        <p class="mvp-panel-error" id="mvp-panel-error" hidden></p>
+        <div class="mvp-panel-actions">
+          <button class="btn-primary" id="mvp-submit" type="submit">Send request</button>
+          <button class="btn-secondary" id="mvp-cancel" type="button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="mvp-panel" id="pdf-panel" aria-hidden="true" role="dialog" aria-labelledby="pdf-panel-title">
+    <div class="mvp-panel-backdrop" id="pdf-panel-backdrop"></div>
+    <div class="mvp-panel-shell">
+      <button class="mvp-panel-close" id="pdf-panel-close" type="button" aria-label="Close">Close</button>
+      <div class="mvp-panel-label">DOWNLOAD PDF</div>
+      <h2 class="mvp-panel-title" id="pdf-panel-title">Leave your email to download</h2>
+      <p class="mvp-panel-hint">With your email I unlock the PDF and receive your interest plus the analysis so we can move forward.</p>
+      <form class="mvp-panel-form" id="pdf-panel-form">
+        <label class="mvp-field">
+          <span>Email</span>
+          <input id="pdf-email" name="email" type="email" autocomplete="email" required placeholder="you@email.com" />
+        </label>
+        <p class="mvp-panel-note">The document matches this page language.</p>
+        <p class="mvp-panel-error" id="pdf-panel-error" hidden></p>
+        <div class="mvp-panel-actions">
+          <button class="btn-primary" id="pdf-submit" type="submit">Send & download</button>
+          <button class="btn-secondary" id="pdf-cancel" type="button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script is:inline define:vars={{ locale }}>
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function(c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; });
@@ -102,7 +156,7 @@ const locale = "en";
       (stepsHtml ? '<section class="stage-section reveal" style="animation-delay:340ms"><div class="stage-section-title">Next steps</div><ul class="stage-list">' + stepsHtml + '</ul></section>' : '') +
       '<section class="stage-section reveal" style="animation-delay:420ms"><div class="stage-section-title">Projects you can explore</div><div class="stage-cards">' + (projectsHtml || '<div class="stage-text">No direct matches in the portfolio yet — this idea is a fresh direction.</div>') + '</div></section>' +
       (mvpHtml ? '<section class="stage-section reveal" style="animation-delay:500ms"><div class="stage-section-title">MVP proposal</div><ul class="stage-list">' + mvpHtml + '</ul></section>' : '') +
-      '<div class="stage-actions reveal" style="animation-delay:620ms"><button class="btn-primary" id="send-idea-btn" type="button">Build this MVP</button><a class="btn-secondary" href="/' + locale + '/">Back to orbit</a></div>' +
+      '<div class="stage-actions reveal" style="animation-delay:620ms"><button class="btn-primary" id="send-idea-btn" type="button">Build this MVP</button><button class="btn-secondary" id="download-pdf-btn" type="button">Download PDF</button><a class="btn-secondary" href="/' + locale + '/">Back to orbit</a></div>' +
       '<div class="powered-by reveal" style="animation-delay:700ms"><span>Analysis powered by</span> <a href="https://flowfolio.space" target="_blank" rel="noopener"><img src="/images/flowfolio-logo.webp" alt="Flowfolio" width="72" height="20" loading="lazy" /> Flowfolio</a></div>'
     );
 
@@ -114,12 +168,142 @@ const locale = "en";
       });
     }
 
+    var PDF_UNLOCK_KEY = 'agustinPdfUnlockedEmail';
+
+    function getUnlockedEmail() {
+      try { return sessionStorage.getItem(PDF_UNLOCK_KEY) || ''; } catch (e) { return ''; }
+    }
+    function unlockPdfWithEmail(email) {
+      try { sessionStorage.setItem(PDF_UNLOCK_KEY, email); } catch (e) {}
+    }
+    function triggerPdfDownload() {
+      if (typeof window.downloadAnalysisPdf === 'function') {
+        window.downloadAnalysisPdf(locale, data.polishedIdea || data.idea || '');
+      }
+    }
+
+    var panel = document.getElementById('mvp-panel');
+    var form = document.getElementById('mvp-panel-form');
+    var errorEl = document.getElementById('mvp-panel-error');
+    var submitBtn = document.getElementById('mvp-submit');
+    var messageEl = document.getElementById('mvp-message');
+    var emailEl = document.getElementById('mvp-email');
+    var phoneEl = document.getElementById('mvp-phone');
+
+    var pdfPanel = document.getElementById('pdf-panel');
+    var pdfForm = document.getElementById('pdf-panel-form');
+    var pdfErrorEl = document.getElementById('pdf-panel-error');
+    var pdfSubmitBtn = document.getElementById('pdf-submit');
+    var pdfEmailEl = document.getElementById('pdf-email');
+
+    function openMvpPanel() {
+      if (!panel) return;
+      if (pdfPanel) { pdfPanel.classList.remove('show'); pdfPanel.setAttribute('aria-hidden', 'true'); }
+      panel.classList.add('show');
+      panel.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('locked');
+      if (errorEl) { errorEl.hidden = true; errorEl.textContent = ''; }
+      requestAnimationFrame(function() {
+        if (messageEl) messageEl.focus();
+      });
+    }
+
+    function closeMvpPanel() {
+      if (!panel) return;
+      panel.classList.remove('show');
+      panel.setAttribute('aria-hidden', 'true');
+      if (!pdfPanel || !pdfPanel.classList.contains('show')) {
+        document.documentElement.classList.remove('locked');
+      }
+    }
+
+    function openPdfPanel() {
+      if (!pdfPanel) return;
+      if (panel) { panel.classList.remove('show'); panel.setAttribute('aria-hidden', 'true'); }
+      pdfPanel.classList.add('show');
+      pdfPanel.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('locked');
+      if (pdfErrorEl) { pdfErrorEl.hidden = true; pdfErrorEl.textContent = ''; }
+      requestAnimationFrame(function() {
+        if (pdfEmailEl) pdfEmailEl.focus();
+      });
+    }
+
+    function closePdfPanel() {
+      if (!pdfPanel) return;
+      pdfPanel.classList.remove('show');
+      pdfPanel.setAttribute('aria-hidden', 'true');
+      if (!panel || !panel.classList.contains('show')) {
+        document.documentElement.classList.remove('locked');
+      }
+    }
+
+    function showPanelError(msg) {
+      if (!errorEl) return;
+      errorEl.hidden = false;
+      errorEl.textContent = msg;
+    }
+
+    function showPdfError(msg) {
+      if (!pdfErrorEl) return;
+      pdfErrorEl.hidden = false;
+      pdfErrorEl.textContent = msg;
+    }
+
     var sendBtn = document.getElementById('send-idea-btn');
     if (sendBtn) {
-      sendBtn.addEventListener('click', function() {
-        var origText = sendBtn.textContent;
-        sendBtn.textContent = 'Sending...';
-        sendBtn.disabled = true;
+      sendBtn.addEventListener('click', function() { openMvpPanel(); });
+    }
+
+    var downloadBtn = document.getElementById('download-pdf-btn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', function() {
+        if (getUnlockedEmail()) {
+          triggerPdfDownload();
+          return;
+        }
+        openPdfPanel();
+      });
+    }
+
+    var closeBtn = document.getElementById('mvp-panel-close');
+    var cancelBtn = document.getElementById('mvp-cancel');
+    var backdrop = document.getElementById('mvp-panel-backdrop');
+    if (closeBtn) closeBtn.addEventListener('click', closeMvpPanel);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeMvpPanel);
+    if (backdrop) backdrop.addEventListener('click', closeMvpPanel);
+
+    var pdfCloseBtn = document.getElementById('pdf-panel-close');
+    var pdfCancelBtn = document.getElementById('pdf-cancel');
+    var pdfBackdrop = document.getElementById('pdf-panel-backdrop');
+    if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePdfPanel);
+    if (pdfCancelBtn) pdfCancelBtn.addEventListener('click', closePdfPanel);
+    if (pdfBackdrop) pdfBackdrop.addEventListener('click', closePdfPanel);
+
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var message = messageEl ? messageEl.value.trim() : '';
+        var email = emailEl ? emailEl.value.trim() : '';
+        var phone = phoneEl ? phoneEl.value.trim() : '';
+
+        if (!email && !phone) {
+          showPanelError('Leave an email or a WhatsApp number.');
+          return;
+        }
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showPanelError('Invalid email.');
+          return;
+        }
+        if (phone && !/^\+?[\d\s().-]{7,20}$/.test(phone)) {
+          showPanelError('Invalid WhatsApp number.');
+          return;
+        }
+
+        var origText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) { submitBtn.textContent = 'Sending...'; submitBtn.disabled = true; }
+        if (errorEl) { errorEl.hidden = true; errorEl.textContent = ''; }
+
         fetch('/api/send-idea', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -129,18 +313,80 @@ const locale = "en";
             tags: data.tags || [],
             steps: data.steps || [],
             mvp: data.mvp || [],
+            message: message,
+            email: email,
+            phone: phone,
+            requireContact: true,
             language: locale
           })
         }).then(function(r) { return r.json(); }).then(function(res) {
           if (res.success) {
-            sendBtn.textContent = 'Sent!';
-            setTimeout(function() { sendBtn.textContent = origText; sendBtn.disabled = false; }, 2000);
+            if (email) unlockPdfWithEmail(email);
+            if (submitBtn) submitBtn.textContent = 'Sent!';
+            if (sendBtn) { sendBtn.textContent = 'Request sent'; sendBtn.disabled = true; }
+            setTimeout(function() {
+              closeMvpPanel();
+              if (submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
+              if (form) form.reset();
+            }, 1200);
           } else {
-            throw new Error(res.error);
+            throw new Error(res.error || 'Error');
           }
-        }).catch(function() {
-          sendBtn.textContent = 'Error - retry';
-          setTimeout(function() { sendBtn.textContent = origText; sendBtn.disabled = false; }, 2000);
+        }).catch(function(err) {
+          showPanelError(err && err.message ? err.message : 'Send failed. Try again.');
+          if (submitBtn) { submitBtn.textContent = origText; submitBtn.disabled = false; }
+        });
+      });
+    }
+
+    if (pdfForm) {
+      pdfForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var email = pdfEmailEl ? pdfEmailEl.value.trim() : '';
+        if (!email) {
+          showPdfError('Leave your email to download the PDF.');
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showPdfError('Invalid email.');
+          return;
+        }
+
+        var origText = pdfSubmitBtn ? pdfSubmitBtn.textContent : '';
+        if (pdfSubmitBtn) { pdfSubmitBtn.textContent = 'Sending...'; pdfSubmitBtn.disabled = true; }
+        if (pdfErrorEl) { pdfErrorEl.hidden = true; pdfErrorEl.textContent = ''; }
+
+        fetch('/api/send-idea', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            idea: data.idea,
+            polishedIdea: data.polishedIdea || '',
+            tags: data.tags || [],
+            steps: data.steps || [],
+            mvp: data.mvp || [],
+            email: email,
+            intent: 'pdf_download',
+            requireEmail: true,
+            requireContact: true,
+            language: locale
+          })
+        }).then(function(r) { return r.json(); }).then(function(res) {
+          if (res.success) {
+            unlockPdfWithEmail(email);
+            if (pdfSubmitBtn) pdfSubmitBtn.textContent = 'Done!';
+            triggerPdfDownload();
+            setTimeout(function() {
+              closePdfPanel();
+              if (pdfSubmitBtn) { pdfSubmitBtn.textContent = origText; pdfSubmitBtn.disabled = false; }
+              if (pdfForm) pdfForm.reset();
+            }, 800);
+          } else {
+            throw new Error(res.error || 'Error');
+          }
+        }).catch(function(err) {
+          showPdfError(err && err.message ? err.message : 'Send failed. Try again.');
+          if (pdfSubmitBtn) { pdfSubmitBtn.textContent = origText; pdfSubmitBtn.disabled = false; }
         });
       });
     }
@@ -153,8 +399,33 @@ const locale = "en";
   }
 
   window.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { e.preventDefault(); window.location.href = '/' + locale + '/'; }
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    var pdfPanel = document.getElementById('pdf-panel');
+    if (pdfPanel && pdfPanel.classList.contains('show')) {
+      pdfPanel.classList.remove('show');
+      pdfPanel.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('locked');
+      return;
+    }
+    var panel = document.getElementById('mvp-panel');
+    if (panel && panel.classList.contains('show')) {
+      panel.classList.remove('show');
+      panel.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('locked');
+      return;
+    }
+    window.location.href = '/' + locale + '/';
   });
+  </script>
+
+  <script>
+    import { buildAnalysisThankYouPdf, downloadSimplePdf } from "../../lib/pdf/simplePdf";
+
+    window.downloadAnalysisPdf = function (locale: string, polishedIdea?: string) {
+      const lang = locale === "en" ? "en" : "es";
+      downloadSimplePdf(buildAnalysisThankYouPdf(lang, polishedIdea));
+    };
   </script>
 </BaseLayout>
 
@@ -195,10 +466,32 @@ const locale = "en";
   .stage-list li { font-size: 14px; color: var(--color-text-dim); padding-left: 20px; position: relative; line-height: 1.55; }
   .stage-list li::before { content: '\2192'; position: absolute; left: 0; color: var(--color-accent); font-family: var(--font-mono); font-size: 11px; }
   .stage-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 64px; }
-  .btn-primary { display: inline-block; background: var(--color-accent); color: white; font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 10px 18px; border-radius: 6px; transition: transform .15s, box-shadow .2s; text-decoration: none; }
+  .btn-primary { display: inline-block; background: var(--color-accent); color: white; font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 10px 18px; border-radius: 6px; transition: transform .15s, box-shadow .2s; text-decoration: none; border: none; cursor: pointer; }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.25); }
-  .btn-secondary { display: inline-block; background: transparent; color: var(--color-text-dim); border: 1px solid var(--color-line); font-family: var(--font-mono); font-size: 12px; padding: 10px 18px; border-radius: 6px; transition: border-color .2s, color .2s; text-decoration: none; }
+  .btn-primary:disabled { opacity: .7; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-secondary { display: inline-block; background: transparent; color: var(--color-text-dim); border: 1px solid var(--color-line); font-family: var(--font-mono); font-size: 12px; padding: 10px 18px; border-radius: 6px; transition: border-color .2s, color .2s; text-decoration: none; cursor: pointer; }
   .btn-secondary:hover { border-color: var(--color-text-faint); color: var(--color-text); }
+
+  .mvp-panel { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+  .mvp-panel.show { opacity: 1; pointer-events: all; }
+  .mvp-panel-backdrop { position: absolute; inset: 0; background: color-mix(in srgb, var(--color-bg) 72%, transparent); backdrop-filter: blur(6px); }
+  .mvp-panel-shell { position: relative; width: min(520px, 100%); background: var(--color-bg-panel); border: 1px solid var(--color-line); border-radius: 12px; padding: 28px 28px 24px; box-shadow: 0 24px 80px color-mix(in srgb, var(--color-bg) 65%, transparent); transform: translateY(14px) scale(0.98); transition: transform .3s cubic-bezier(.16,1,.3,1); }
+  .mvp-panel.show .mvp-panel-shell { transform: translateY(0) scale(1); }
+  .mvp-panel-close { position: absolute; top: 16px; right: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-dim); border: 1px solid var(--color-line); background: transparent; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .mvp-panel-close:hover { color: var(--color-text); border-color: var(--color-text-faint); }
+  .mvp-panel-label { font-family: var(--font-mono); font-size: 10px; color: var(--color-accent); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
+  .mvp-panel-title { font-family: var(--font-grotesk); font-size: clamp(1.4rem, 3vw, 1.75rem); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 8px; }
+  .mvp-panel-hint { font-size: 14px; color: var(--color-text-dim); line-height: 1.55; margin: 0 0 22px; }
+  .mvp-panel-form { display: flex; flex-direction: column; gap: 14px; }
+  .mvp-field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .mvp-field span { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.03em; }
+  .mvp-field input, .mvp-field textarea { width: 100%; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 8px; color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; padding: 10px 12px; outline: none; transition: border-color .2s; resize: vertical; }
+  .mvp-field input:focus, .mvp-field textarea:focus { border-color: var(--color-accent-dim); }
+  .mvp-field input::placeholder, .mvp-field textarea::placeholder { color: var(--color-text-faint); }
+  .mvp-field-row { display: flex; gap: 12px; }
+  .mvp-panel-note { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-faint); margin: 0; }
+  .mvp-panel-error { font-size: 13px; color: #ef4444; margin: 0; }
+  .mvp-panel-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
   .powered-by { display: flex; align-items: center; gap: 8px; margin-top: 40px; font-family: var(--font-mono); font-size: 13px; color: var(--color-text-faint); opacity: .6; }
   .powered-by a { color: inherit; display: flex; align-items: center; gap: 6px; }
   .powered-by img { height: 20px; width: auto; filter: brightness(.8); transition: filter .2s; }
@@ -211,5 +504,8 @@ const locale = "en";
     .stage-actions { margin-top: 48px; }
     .fallback-banner { flex-direction: column; gap: 10px; }
     .fallback-retry { align-self: flex-start; }
+    .mvp-field-row { flex-direction: column; }
+    .mvp-panel { padding: 16px; }
+    .mvp-panel-shell { padding: 22px 18px 18px; }
   }
 </style>

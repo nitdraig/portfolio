@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getEnv } from "../../lib/env";
 import { isSameOriginRequest } from "../../lib/contact/origin";
+import { sendThankYouEmail } from "../../lib/email/sendThankYouEmail";
 
 export type SendEmailResult =
   | { success: true }
@@ -9,20 +10,57 @@ export type SendEmailResult =
 /** Allowed types for the general send-email endpoint. */
 type EmailType = "idea" | "contact" | "budget";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^\+?[\d\s().-]{7,20}$/;
+
 function buildIdeaMessage(data: Record<string, unknown>, isEs: boolean): string {
   const idea = String(data.idea || "").trim();
   const polishedIdea = String(data.polishedIdea || "").trim();
+  const userMessage = String(data.message || "").trim();
+  const email = String(data.email || "").trim();
+  const phone = String(data.phone || "").trim();
+  const intent = String(data.intent || "").trim();
   const tags = Array.isArray(data.tags) ? data.tags : [];
   const steps = Array.isArray(data.steps) ? data.steps : [];
   const mvp = Array.isArray(data.mvp) ? data.mvp : [];
+  const isPdfDownload = intent === "pdf_download";
 
   const lines: string[] = [
-    isEs ? "Nueva idea desde el portfolio" : "New idea from the portfolio",
-    "",
-    isEs ? "Idea original:" : "Original idea:",
-    idea,
+    isPdfDownload
+      ? isEs
+        ? "Descarga de PDF del análisis desde el portfolio"
+        : "Analysis PDF download from the portfolio"
+      : isEs
+        ? "Nueva solicitud de MVP desde el portfolio"
+        : "New MVP request from the portfolio",
     "",
   ];
+
+  if (email) lines.push("Email:", email, "");
+  if (phone) {
+    lines.push(
+      isEs ? "WhatsApp / Teléfono:" : "WhatsApp / Phone:",
+      phone,
+      "",
+    );
+  }
+  if (isPdfDownload) {
+    lines.push(
+      isEs
+        ? "El visitante dejó su email para descargar el PDF del análisis."
+        : "The visitor left their email to download the analysis PDF.",
+      "",
+    );
+  }
+  if (userMessage) {
+    lines.push(
+      isEs ? "Mensaje del visitante:" : "Visitor message:",
+      userMessage,
+      "",
+    );
+  }
+
+  lines.push(isEs ? "Idea original:" : "Original idea:", idea, "");
 
   if (polishedIdea) {
     lines.push(isEs ? "Idea pulida:" : "Polished idea:", polishedIdea, "");
@@ -120,6 +158,8 @@ export const POST: APIRoute = async ({ request }) => {
     const type: EmailType =
       body.type === "contact" || body.type === "budget" ? body.type : "idea";
     const email = typeof body.email === "string" ? body.email.trim() : "";
+    const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+    const userMessage = typeof body.message === "string" ? body.message.trim() : "";
 
     // Validate required fields per type
     if (type === "contact") {
@@ -157,6 +197,59 @@ export const POST: APIRoute = async ({ request }) => {
           { status: 400 },
         );
       }
+      if (userMessage.length > 2000) {
+        return Response.json(
+          {
+            success: false,
+            error: isEs
+              ? "El mensaje es muy largo (máx. 2000 caracteres)."
+              : "Message is too long (max 2000 characters).",
+          } satisfies SendEmailResult,
+          { status: 400 },
+        );
+      }
+      const requireContact = body.requireContact === true;
+      const intent = typeof body.intent === "string" ? body.intent.trim() : "";
+      const requireEmail = intent === "pdf_download" || body.requireEmail === true;
+
+      if (requireEmail && !email) {
+        return Response.json(
+          {
+            success: false,
+            error: isEs ? "Dejá tu email para continuar." : "Leave your email to continue.",
+          } satisfies SendEmailResult,
+          { status: 400 },
+        );
+      }
+      if (requireContact && !requireEmail && !email && !phone) {
+        return Response.json(
+          {
+            success: false,
+            error: isEs
+              ? "Dejá un email o un número de WhatsApp."
+              : "Leave an email or a WhatsApp number.",
+          } satisfies SendEmailResult,
+          { status: 400 },
+        );
+      }
+      if (email && !EMAIL_RE.test(email)) {
+        return Response.json(
+          {
+            success: false,
+            error: isEs ? "Email no válido." : "Invalid email.",
+          } satisfies SendEmailResult,
+          { status: 400 },
+        );
+      }
+      if (phone && !PHONE_RE.test(phone)) {
+        return Response.json(
+          {
+            success: false,
+            error: isEs ? "Número de WhatsApp no válido." : "Invalid WhatsApp number.",
+          } satisfies SendEmailResult,
+          { status: 400 },
+        );
+      }
     }
 
     const emailDestiny =
@@ -186,7 +279,7 @@ export const POST: APIRoute = async ({ request }) => {
     const senderName =
       type === "contact" || type === "budget"
         ? String(body.name || "").trim() || "Portfolio Visitor"
-        : email || "Portfolio Visitor";
+        : email || phone || "Portfolio Visitor";
 
     const res = await fetch(url, {
       method: "POST",
@@ -196,7 +289,7 @@ export const POST: APIRoute = async ({ request }) => {
         email: email || "no-reply@portfolio.local",
         service: SERVICE_LABELS[type][language],
         message,
-        phone: "",
+        phone: phone || "",
         webName: WEB_NAME_LABELS[type][language],
         emailDestiny,
         formToken: mailprexToken,
@@ -210,6 +303,18 @@ export const POST: APIRoute = async ({ request }) => {
         { success: false, error: text || `HTTP ${res.status}`, status: res.status } satisfies SendEmailResult,
         { status: 502 },
       );
+    }
+
+    // Thank-you email to the visitor when they left an email (idea requests).
+    if (type === "idea" && email && EMAIL_RE.test(email)) {
+      const thankYou = await sendThankYouEmail({
+        to: email,
+        name: senderName,
+        language,
+      });
+      if (!thankYou.ok) {
+        console.error("[send-idea] Thank-you email failed", thankYou.error);
+      }
     }
 
     return Response.json({ success: true } satisfies SendEmailResult);
