@@ -334,7 +334,7 @@ export const ui = {
       proofNum: "PROOF",
       proofTitle: "Explorar proyectos reales",
       proofSub: "Algunos de los proyectos que construí, con tecnología real y resultados medibles.",
-      proofCta: "Ver todos los proyectos →",
+      proofCta: "Ver más →",
       workNum: "WORK",
       workTitle: "Cómo puedo aportar a tu visión",
       pillars: [
@@ -711,7 +711,7 @@ export const ui = {
       proofNum: "PROOF",
       proofTitle: "Explore real projects",
       proofSub: "Some of the projects I've built, with real technology and measurable results.",
-      proofCta: "View all projects →",
+      proofCta: "See more →",
       workNum: "WORK",
       workTitle: "How I can contribute to your vision",
       pillars: [

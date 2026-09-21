@@ -1,0 +1,210 @@
+---
+import type { Locale } from "../i18n/ui";
+import { ui } from "../i18n/ui";
+import { projects, type Project } from "../data/projects";
+
+interface Props {
+  locale: Locale;
+  /** Max projects to show. Omit for all. */
+  limit?: number;
+  /** Show the "see more" CTA linking to /projects */
+  showMoreCta?: boolean;
+  /** Wider layout for the full projects page */
+  wide?: boolean;
+}
+
+const { locale, limit, showMoreCta = false, wide = false } = Astro.props;
+const lang: Locale = locale;
+const t = ui[lang].projects;
+const n = ui[lang].narrative;
+const prefix = `/${lang}`;
+
+function sortRank(project: Project): number {
+  if (typeof project.homeOrder === "number") return project.homeOrder;
+  return project.featured ? 50 : 200;
+}
+
+const ordered = [...projects].sort((a, b) => sortRank(a) - sortRank(b));
+const list = typeof limit === "number" ? ordered.slice(0, limit) : ordered;
+const hasMore = typeof limit === "number" && ordered.length > limit;
+---
+
+<div class:list={["projects-gallery", wide && "projects-gallery-wide"]}>
+  <div class="projects-gallery-grid">
+    {
+      list.map((p) => (
+        <a href={`${prefix}/projects/${p.slug}/`} class="pg-card reveal">
+          <div class="pg-card-image">
+            <img
+              src={p.image}
+              alt={p.title[lang]}
+              loading="lazy"
+              width="480"
+              height="260"
+            />
+          </div>
+          <div class="pg-card-body">
+            <div class="pg-card-top">
+              <span class="pg-card-type">{p.deliveryType}</span>
+              {p.year ? <span class="pg-card-year">{p.year}</span> : null}
+            </div>
+            <h3 class="pg-card-title">{p.title[lang]}</h3>
+            <p class="pg-card-desc">{p.shortDescription[lang]}</p>
+            <div class="pg-card-meta">
+              {p.highlightMetric ? (
+                <span class="pg-card-metric">{p.highlightMetric[lang]}</span>
+              ) : (
+                <span class="pg-card-industry">{p.industry}</span>
+              )}
+              <span class="pg-card-view">{lang === "es" ? "Ver →" : "View →"}</span>
+            </div>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+
+  {
+    showMoreCta && hasMore ? (
+      <div class="projects-gallery-cta">
+        <a href={`${prefix}/projects/`} class="projects-gallery-link">
+          {n.proofCta || t.showMore}
+        </a>
+      </div>
+    ) : null
+  }
+</div>
+
+<style>
+  .projects-gallery { width: 100%; }
+  .projects-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .projects-gallery-wide .projects-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+  }
+  .pg-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-bg-panel);
+    text-decoration: none;
+    transition: border-color .2s, transform .15s;
+  }
+  .pg-card:hover {
+    border-color: var(--color-accent-dim);
+    transform: translateY(-2px);
+  }
+  .pg-card-image {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background: var(--color-line);
+  }
+  .projects-gallery-wide .pg-card-image { height: 200px; }
+  .pg-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s;
+  }
+  .pg-card:hover .pg-card-image img { transform: scale(1.05); }
+  .pg-card-body {
+    padding: 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .pg-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pg-card-type,
+  .pg-card-year {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-text-faint);
+    text-transform: capitalize;
+  }
+  .pg-card-type {
+    border: 1px solid var(--color-line);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+  .pg-card-title {
+    font-family: var(--font-grotesk);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .pg-card-desc {
+    font-size: 13px;
+    color: var(--color-text-dim);
+    line-height: 1.55;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .pg-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .pg-card-metric {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-accent);
+  }
+  .pg-card-industry {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-text-faint);
+    text-transform: capitalize;
+  }
+  .pg-card-view {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-faint);
+    transition: color .2s;
+  }
+  .pg-card:hover .pg-card-view { color: var(--color-accent); }
+  .projects-gallery-cta {
+    margin-top: 32px;
+    text-align: center;
+  }
+  .projects-gallery-link {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text);
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    padding: 10px 18px;
+    transition: border-color .2s, color .2s, transform .15s;
+  }
+  .projects-gallery-link:hover {
+    border-color: var(--color-accent-dim);
+    color: var(--color-accent);
+    transform: translateY(-1px);
+  }
+  @media (max-width: 720px) {
+    .projects-gallery-grid,
+    .projects-gallery-wide .projects-gallery-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

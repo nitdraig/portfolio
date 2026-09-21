@@ -1,20 +1,88 @@
 ---
 export const prerender = true;
+
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import ProjectsGallery from "../../../components/ProjectsGallery.astro";
+import { ui } from "../../../i18n/ui";
+import { projects } from "../../../data/projects";
+
+const locale = "en";
+const t = ui[locale].projects;
+const count = projects.length;
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="robots" content="noindex, nofollow" />
-    <meta http-equiv="refresh" content="0;url=/en/" />
-    <script is:inline>
-      var projects = ["ate","flowfolio","experimental-global-app-landing","meet-my-race","around-notes-blog","around-notes-app","around-notes-landing","sigii-app","mining-talent-net","excelso-tech-group","jema-ai-impact","huellitasctg-webapp","dc-landing-page","fuddy-app","mailprex"];
-      var slug = projects[Math.floor(Math.random() * projects.length)];
-      window.location.replace("/en/projects/" + slug + "/");
-    </script>
-  </head>
-  <body>
-    <p>Redirecting...</p>
-  </body>
-</html>
+<BaseLayout
+  locale={locale}
+  title="Projects — Agustín Avellaneda"
+  description={t.subtitle}
+  canonicalPath="/projects"
+>
+  <main class="projects-page">
+    <div class="projects-page-head">
+      <div class="projects-page-label">PORTFOLIO</div>
+      <h1 class="projects-page-title">{t.title}</h1>
+      <p class="projects-page-sub">{t.subtitle}</p>
+      <p class="projects-page-count">{count} projects</p>
+    </div>
+
+    <ProjectsGallery locale={locale} wide />
+
+    <div class="projects-page-back">
+      <a href={`/${locale}/`}>&larr; Back to orbit</a>
+    </div>
+  </main>
+</BaseLayout>
+
+<style is:global>
+  .projects-page {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 120px 32px 100px;
+  }
+  .projects-page-head { margin-bottom: 48px; max-width: 640px; }
+  .projects-page-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .projects-page-title {
+    font-family: var(--font-grotesk);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .projects-page-sub {
+    font-size: 15px;
+    color: var(--color-text-dim);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .projects-page-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-faint);
+  }
+  .projects-page-back {
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--color-line);
+  }
+  .projects-page-back a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-accent);
+    border-bottom: 1px solid var(--color-accent-dim);
+    text-decoration: none;
+  }
+  .projects-page-back a:hover { border-color: var(--color-accent); }
+  @media (max-width: 720px) {
+    .projects-page { padding: 96px 22px 80px; }
+  }
+</style>
