@@ -150,6 +150,13 @@ export const ui = {
       counter: "{current} / {total}",
       items: [
         {
+          text: "Hemos trabajado con Agustín en distintos proyectos y, en este último caso, tuvimos la oportunidad de desarrollar juntos la aplicación para Club Social ATE. Desde Nepal Estudio nos encargamos del diseño y los prototipos, y Agustín llevó adelante el desarrollo para convertir esas ideas en una aplicación funcional. Durante todo el proceso hubo muy buen ida y vuelta, mucha predisposición para escuchar propuestas, resolver dudas y hacer los cambios que fueron surgiendo a partir de las necesidades del cliente. Valoramos mucho su forma de trabajar, su profesionalismo y la facilidad para trabajar en equipo. Fue una muy buena experiencia y esperamos que sigamos compartiendo muchos proyectos más.",
+          name: "Nepal Estudio",
+          role: "Diseño y prototipado · ",
+          companyName: "Club Social ATE",
+          companyUrl: "https://www.agustin.top/es/projects/ate/",
+        },
+        {
           text: "Trabajar con Agustín es una de esas experiencias que confirman que el talento joven está más vivo que nunca. Lo conocí en una charla, le compartí una idea, y al toque estábamos trabajando juntos con una sintonía que no es fácil de lograr. Lo que más destaco no es solo su capacidad de materializar cualquier visión, sino el cuidado estético con el que lo hace: limpio, moderno, con criterio. A eso se suma una responsabilidad y compromiso que se notan en cada entrega.",
           name: "Emiliano Salas Porta",
           role: "CEO en ",
@@ -528,6 +535,13 @@ export const ui = {
       goTo: "Go to testimonial",
       counter: "{current} / {total}",
       items: [
+        {
+          text: "We've worked with Agustín on several projects and, in this latest case, we had the chance to build the Club Social ATE app together. At Nepal Estudio we handled the design and prototypes, and Agustín led the development to turn those ideas into a working application. Throughout the process there was great back-and-forth, a lot of willingness to listen to proposals, resolve questions, and make the changes that came up from the client's needs. We really value his way of working, his professionalism, and how easy it is to collaborate as a team. It was a great experience and we hope we keep sharing many more projects.",
+          name: "Nepal Estudio",
+          role: "Design & prototyping · ",
+          companyName: "Club Social ATE",
+          companyUrl: "https://www.agustin.top/en/projects/ate/",
+        },
         {
           text: "Working with Agustín is one of those experiences that confirm that young talent is more alive than ever. I met him at a talk, I shared an idea with him, and soon we were working together with a harmony that is not easy to achieve. What stands out the most is not only his ability to materialize any vision, but the aesthetic care with which it is done: clean, modern, with criteria.Added to this is a responsibility and commitment that is evident in each delivery.",
           name: "Emiliano Salas Porta",
