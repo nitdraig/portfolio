@@ -25,14 +25,32 @@
   opacity: 0; pointer-events: none; transform: translateY(10px);
 }
 #graph-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; touch-action: none; }
-.hero-inner { position: relative; z-index: 2; max-width: 640px; transition: opacity .5s ease, transform .5s ease; }
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  transition: opacity .5s ease, transform .5s ease;
+  /* Let orbit / node clicks pass through copy to the WebGL canvas */
+  pointer-events: none;
+}
+.hero-inner :is(form, button, textarea, a, input, select) {
+  pointer-events: auto;
+}
 .status-strip { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 11.5px; color: var(--color-text-dim); margin-bottom: 28px; letter-spacing: 0.02em; }
 .status-strip span { display: flex; align-items: center; gap: 6px; }
 .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent); display: inline-block; box-shadow: 0 0 8px rgba(59,130,246,0.8); }
 .dot.pulse { animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
 .hero-name { font-family: var(--font-grotesk); font-weight: 500; font-size: clamp(1.1rem, 2.2vw, 1.5rem); color: var(--color-text-dim); letter-spacing: 0.02em; margin-bottom: 12px; opacity: 0; animation: fade-in 0.8s ease forwards; animation-delay: 0.3s; }
-h1.headline { font-family: var(--font-grotesk); font-weight: 600; font-size: clamp(2.6rem, 6.6vw, 4.6rem); line-height: 1.03; letter-spacing: -0.015em; max-width: 13ch; overflow: hidden; }
+h1.headline {
+  font-family: var(--font-grotesk);
+  font-weight: 600;
+  font-size: clamp(2rem, 5.5vw, 4.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  max-width: 14ch;
+  overflow: hidden;
+}
 h1.headline .line { display: block; overflow: hidden; }
 h1.headline .line span { display: inline-block; transform: translateY(110%); animation: reveal-up 0.9s cubic-bezier(.16,1,.3,1) forwards; }
 h1.headline .line:nth-child(2) span { animation-delay: 0.08s; }
@@ -54,7 +72,26 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
 .cmdbar-modal.show { opacity: 1; pointer-events: all; }
 .cmdbar-modal-shell { width: min(760px,100%); max-height: 80vh; display: flex; flex-direction: column; gap: 20px; background: var(--color-bg-panel); border: 1px solid var(--color-line); border-radius: 14px; padding: 36px; box-shadow: 0 30px 90px color-mix(in srgb, var(--color-bg) 70%, transparent); transform: translateY(18px) scale(0.98); transition: transform .35s cubic-bezier(.16,1,.3,1); }
 .cmdbar-modal.show .cmdbar-modal-shell { transform: translateY(0) scale(1); }
-.cmdbar-modal textarea { width: 100%; height: 50vh; min-height: 200px; max-height: 60vh; resize: none; overflow-y: auto; overscroll-behavior: contain; background: none; border: none; outline: none; color: var(--color-text); font-family: var(--font-sans); font-size: clamp(1.3rem,3.2vw,1.9rem); line-height: 1.5; }
+.cmdbar-modal textarea { width: 100%; height: 50vh; min-height: 200px; max-height: 60vh; resize: none; overflow-y: auto; overscroll-behavior: contain; background: none; border: none; outline: none; color: var(--color-text); font-family: var(--font-sans); font-size: clamp(1.3rem,3.2vw,1.9rem); line-height: 1.5; transition: box-shadow .25s ease; }
+.cmdbar-modal-shell.is-invalid textarea { box-shadow: inset 0 -2px 0 rgba(234,179,8,0.65); }
+.cmdbar-modal-feedback {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  color: #ca8a04;
+  margin: -8px 0 0;
+  min-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.cmdbar-modal-feedback:not([hidden]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-color-scheme: dark) {
+  .cmdbar-modal-feedback { color: #eab308; }
+}
 .cmdbar-modal textarea::placeholder { color: var(--color-text-faint); }
 .cmdbar-modal-hint { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-faint); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .cmdbar-modal-hint b { color: var(--color-text-dim); font-weight: 500; }
@@ -197,7 +234,23 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
 .nt-title { color: var(--color-accent); font-weight: 500; display: block; margin-bottom: 4px; letter-spacing: 0.03em; }
 .nt-tag { display: block; font-size: 10px; color: var(--color-accent); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
 .nt-preview { display: block; color: var(--color-text-faint); font-size: 11px; line-height: 1.45; }
-.node-dots { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); z-index: 12; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.node-dots {
+  position: absolute;
+  left: auto;
+  right: 18px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  width: auto;
+  max-width: none;
+  pointer-events: none;
+}
+.node-dots .node-dot { pointer-events: auto; }
 .node-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-line); cursor: pointer; transition: background .2s, transform .2s; padding: 0; border: none; }
 .node-dot.active { background: var(--color-accent); transform: scale(1.25); }
 .telemetry { position: absolute; bottom: 28px; right: 32px; z-index: 2; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-faint); text-align: right; display: flex; flex-direction: column; gap: 4px; transition: opacity .5s ease, transform .5s ease; }
@@ -252,6 +305,48 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
   .node-detail { padding: 16px; align-items: flex-end; }
   .node-detail-inner { max-height: 75vh; padding: 24px; }
 }
+@media (max-width: 900px) {
+  h1.headline {
+    font-size: clamp(1.75rem, 6.2vw, 2.5rem);
+    max-width: 15ch;
+  }
+  .hero-section {
+    padding-left: 20px;
+    padding-right: 20px;
+    justify-content: flex-start;
+    padding-top: max(76px, 10dvh);
+  }
+  .hero-inner { max-width: min(100%, 520px); }
+  p.sub { font-size: 14px; margin-top: 14px; max-width: 42ch; }
+  .cmdbar { margin-top: 28px; }
+  .cmdbar-modal-loading-text {
+    font-size: clamp(1.25rem, 5.5vw, 1.75rem);
+  }
+  /* Rail fijo al borde derecho del viewport (el padding del hero desplazaba el ancla) */
+  .node-dots {
+    position: fixed;
+    left: auto;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    align-items: flex-end;
+  }
+  .hero-section.inspect-mode .node-dots {
+    top: auto;
+    bottom: calc(60vh + 28px);
+    transform: none;
+  }
+}
+
+@media (max-height: 720px) and (max-width: 900px) {
+  h1.headline { font-size: clamp(1.45rem, 5vw, 1.95rem); }
+  .status-strip { margin-bottom: 14px; }
+  p.sub { margin-top: 10px; -webkit-line-clamp: 3; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .cmdbar { margin-top: 18px; }
+  .onboarding-hint { display: none; }
+}
+
 @media (max-width: 720px) {
   /* Scrim behind content — guarantees contrast against graph brightness */
   .hero-inner::before {
@@ -270,15 +365,23 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
   /* Status strip: compress to essential badge only */
   .status-strip { gap: 0; font-size: 10px; margin-bottom: 20px; }
   .status-strip span:not(:first-child) { display: none; }
-  .cmdbar-modal { padding: 16px; }
-  .cmdbar-modal-shell { padding: 22px; }
+  h1.headline {
+    font-size: clamp(1.5rem, 7.2vw, 2.1rem);
+    max-width: 16ch;
+  }
+  .hero-name { font-size: clamp(0.9rem, 3.2vw, 1.05rem); margin-bottom: 8px; }
+  .cmdbar-modal { padding: 16px; align-items: flex-start; justify-content: flex-start; padding-top: max(72px, 12dvh); overflow-y: auto; overscroll-behavior: contain; }
+  .cmdbar-modal-shell { padding: 22px; max-height: none; }
   .cmdbar-modal textarea { min-height: 180px; font-size: 1.15rem; }
   .cmdbar-modal-close { top: 16px; right: 16px; }
   .hero-controls { display: none; }
   .telemetry { display: none; }
   .skip-btn { bottom: 20px; font-size: 11px; padding: 12px 20px; min-height: 44px; }
   .onboarding-hint { left: 16px; bottom: 68px; font-size: 10px; max-width: 220px; }
-  .node-dots { right: 12px; gap: 8px; }
+  .node-dots {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    gap: 8px;
+  }
   .node-dot { width: 10px; height: 10px; }
   /* Reduce backdrop-filter on mobile for performance */
   .cmdbar-shell { backdrop-filter: blur(4px); }

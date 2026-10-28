@@ -516,7 +516,12 @@ const locale = "en";
   @keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
   @media (max-width: 720px) {
     main { padding: 96px 22px 80px; }
-    .stage-title { margin-bottom: 48px; }
+    .stage-title {
+      font-size: clamp(1.25rem, 6vw, 1.85rem);
+      line-height: 1.2;
+      margin-bottom: 36px;
+      overflow-wrap: anywhere;
+    }
     .stage-actions { margin-top: 48px; }
     .fallback-banner { flex-direction: column; gap: 10px; }
     .fallback-retry { align-self: flex-start; }

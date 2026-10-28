@@ -50,7 +50,8 @@ const PROJECTS = getNodeProjects(locale);
           </ul>
           <button type="button" class="btn-secondary cmdbar-how-close" id="cmdbar-how-close">{t.howItWorksClose}</button>
         </div>
-        <textarea id="cmd-modal-input" placeholder={t.modalPlaceholder} autocomplete="off"></textarea>
+        <textarea id="cmd-modal-input" placeholder={t.modalPlaceholder} autocomplete="off" aria-describedby="cmdbar-modal-feedback"></textarea>
+        <p class="cmdbar-modal-feedback" id="cmdbar-modal-feedback" role="alert" hidden></p>
         <div class="cmdbar-modal-hint">
           <span>{t.modalHint}</span>
           <button type="button" class="btn-primary" id="cmdbar-modal-send">{t.modalAnalyze}</button>
@@ -275,6 +276,9 @@ const PROJECTS = getNodeProjects(locale);
   var cmdModalClose = document.getElementById('cmdbar-modal-close');
   var cmdModalSend = document.getElementById('cmdbar-modal-send');
   var cmdModalShell = document.getElementById('cmdbar-modal-shell');
+  var cmdbarFeedback = document.getElementById('cmdbar-modal-feedback');
+  var cmdbarErrorTimer = null;
+  var CMD_BAR_ERROR_MS = 5200;
   var analyzeTimeout = null;
   var analyzeNavTimeout = null;
   var isAnalyzing = false;
@@ -288,18 +292,40 @@ const PROJECTS = getNodeProjects(locale);
     if (cmdModalSend) cmdModalSend.disabled = false;
   }
 
+  function hideCmdbarError() {
+    if (cmdbarErrorTimer) {
+      clearTimeout(cmdbarErrorTimer);
+      cmdbarErrorTimer = null;
+    }
+    if (cmdbarFeedback) {
+      cmdbarFeedback.hidden = true;
+      cmdbarFeedback.textContent = '';
+    }
+    if (cmdModalShell) cmdModalShell.classList.remove('is-invalid');
+  }
+
   function showCmdbarError(msg) {
-    var loadingText = cmdModalShell.querySelector('.cmdbar-modal-loading-text');
-    if (loadingText) loadingText.textContent = msg;
-    cmdModalShell.classList.add('loading');
-    setTimeout(function() {
-      cmdModalShell.classList.remove('loading');
-      if (loadingText) loadingText.textContent = currentLocale === 'es' ? 'Pensando...' : 'Thinking...';
-    }, 2500);
+    if (isAnalyzing) return;
+    hideCmdbarError();
+    if (cmdModalShell) cmdModalShell.classList.remove('loading');
+    if (cmdbarFeedback) {
+      cmdbarFeedback.textContent = msg;
+      cmdbarFeedback.hidden = false;
+    }
+    if (cmdModalShell) cmdModalShell.classList.add('is-invalid');
+    if (cmdModalInput) {
+      cmdModalInput.focus({ preventScroll: true });
+      requestAnimationFrame(function() {
+        cmdModalInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (cmdbarFeedback) cmdbarFeedback.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+    cmdbarErrorTimer = setTimeout(hideCmdbarError, CMD_BAR_ERROR_MS);
   }
 
   function openCmdbarModal() {
     if (cmdModal.classList.contains('show')) return;
+    hideCmdbarError();
     cmdModal.classList.add('show');
     cmdModal.setAttribute('aria-hidden','false');
     cmdModalInput.value = cmdInput.value;
@@ -313,6 +339,7 @@ const PROJECTS = getNodeProjects(locale);
 
   function closeCmdbarModal() {
     if (isAnalyzing) cancelAnalysis();
+    hideCmdbarError();
     cmdModal.classList.remove('show');
     cmdModal.setAttribute('aria-hidden','true');
     cmdInput.value = cmdModalInput.value;
@@ -349,7 +376,10 @@ const PROJECTS = getNodeProjects(locale);
   }, { passive: true });
 
   cmdInput.addEventListener('focus', openCmdbarModal);
-  cmdModalInput.addEventListener('input', () => { cmdInput.value = cmdModalInput.value; });
+  cmdModalInput.addEventListener('input', () => {
+    cmdInput.value = cmdModalInput.value;
+    hideCmdbarError();
+  });
   cmdModalInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); cmdForm.dispatchEvent(new Event('submit')); }
     if (e.key === 'Escape') { e.preventDefault(); closeCmdbarModal(); }
@@ -440,6 +470,7 @@ const PROJECTS = getNodeProjects(locale);
     /* --- End client-side validation --- */
 
     isAnalyzing = true;
+    hideCmdbarError();
     cmdModalShell.classList.add('loading');
     cmdModalInput.disabled = true;
     cmdModalSend.disabled = true;
@@ -544,13 +575,22 @@ const PROJECTS = getNodeProjects(locale);
   (function() {
     var canvas = document.getElementById('graph-canvas');
     var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var isMobile = window.innerWidth < 640;
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    var lowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4;
+    var lowCores = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
+    var lowPower = isMobile || lowMemory || lowCores || reducedMotion || !!(conn && conn.saveData);
+    var cmdkOverlay = document.getElementById('cmdk-overlay');
+    var scenePaused = false;
+    document.addEventListener('visibilitychange', function() {
+      scenePaused = document.hidden;
+    });
     var scene = new THREE.Scene();
     // lexis: fog removed — alpha:true renders transparent, fog was fading nodes to dark on light theme
     var camera = new THREE.PerspectiveCamera(50, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
     camera.position.set(0, 0, 15);
-    var isMobile = window.innerWidth < 640;
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha:true, antialias: !isMobile });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha:true, antialias: !isMobile && !lowPower, powerPreference: lowPower ? 'low-power' : 'default' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : (isMobile ? 1.5 : 2)));
     function resize() {
       var w = canvas.clientWidth, h = canvas.clientHeight;
       renderer.setSize(w, h, false);
@@ -587,7 +627,7 @@ const PROJECTS = getNodeProjects(locale);
     var haloTex = new THREE.CanvasTexture(haloCanvas);
     var haloMat = new THREE.SpriteMaterial({ map: haloTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending });
 
-    var hubGeo = new THREE.SphereGeometry(0.09, 16, 16);
+    var hubGeo = new THREE.SphereGeometry(0.09, lowPower ? 10 : 16, lowPower ? 10 : 16);
     var hubMat = new THREE.MeshBasicMaterial({ color: accent });
     var hubMeshes = hubPositions.map(function(pos) {
       var m = new THREE.Mesh(hubGeo, hubMat);
@@ -601,7 +641,7 @@ const PROJECTS = getNodeProjects(locale);
       return m;
     });
 
-    var centerGeo = new THREE.SphereGeometry(0.06, 16, 16);
+    var centerGeo = new THREE.SphereGeometry(0.06, lowPower ? 10 : 16, lowPower ? 10 : 16);
     var centerMesh = new THREE.Mesh(centerGeo, new THREE.MeshBasicMaterial({color:0xffffff}));
     group.add(centerMesh);
     var centerHalo = new THREE.Sprite(haloMat.clone());
@@ -622,7 +662,7 @@ const PROJECTS = getNodeProjects(locale);
 
     var ringMat = new THREE.MeshBasicMaterial({ color: dim, transparent:true, opacity:0.10, side:THREE.DoubleSide });
     var ringGroup = new THREE.Group();
-    var ringSeg = isMobile ? 40 : 80;
+    var ringSeg = lowPower ? 24 : (isMobile ? 40 : 80);
     [3.9, 4.9, 6.0].forEach(function(r, i) {
       var ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 8, ringSeg), ringMat);
       ring.rotation.x = (i * 0.7);
@@ -633,7 +673,7 @@ const PROJECTS = getNodeProjects(locale);
 
     var gridGroup = new THREE.Group();
     var gridMat = new THREE.LineBasicMaterial({ color: 0x2a2b2f, transparent:true, opacity:0.35 });
-    var gridSize = 14, gridDiv = isMobile ? 8 : 14;
+    var gridSize = 14, gridDiv = lowPower ? 6 : (isMobile ? 8 : 14);
     for (var i=0;i<=gridDiv;i++) {
       var p = -gridSize/2 + (gridSize/gridDiv)*i;
       var g1 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p,0,-gridSize/2), new THREE.Vector3(p,0,gridSize/2)]);
@@ -644,7 +684,7 @@ const PROJECTS = getNodeProjects(locale);
     gridGroup.position.y = -3.6;
     scene.add(gridGroup);
 
-    var AMBIENT = isMobile ? 30 : 90;
+    var AMBIENT = lowPower ? 14 : (isMobile ? 30 : 90);
     var ambientPositions = [];
     for (var i=0;i<AMBIENT;i++) {
       var ar = 2.2 + Math.random()*2.4;
@@ -659,11 +699,13 @@ const PROJECTS = getNodeProjects(locale);
     group.add(ambientPoints);
 
     var ambLineMat = new THREE.LineBasicMaterial({ color: dim, transparent:true, opacity:0.22 });
-    for (var i=0;i<AMBIENT;i++) {
-      for (var j=i+1;j<AMBIENT;j++) {
-        if (ambientPositions[i].distanceTo(ambientPositions[j]) < 1.15 && Math.random() < 0.3) {
-          var lgeo = new THREE.BufferGeometry().setFromPoints([ambientPositions[i], ambientPositions[j]]);
-          group.add(new THREE.Line(lgeo, ambLineMat));
+    if (!lowPower) {
+      for (var i=0;i<AMBIENT;i++) {
+        for (var j=i+1;j<AMBIENT;j++) {
+          if (ambientPositions[i].distanceTo(ambientPositions[j]) < 1.15 && Math.random() < 0.3) {
+            var lgeo = new THREE.BufferGeometry().setFromPoints([ambientPositions[i], ambientPositions[j]]);
+            group.add(new THREE.Line(lgeo, ambLineMat));
+          }
         }
       }
     }
@@ -737,7 +779,7 @@ const PROJECTS = getNodeProjects(locale);
 
     /* Keyboard */
     window.addEventListener('keydown', function(e) {
-      if (cmdkOverlay.classList.contains('show')) return;
+      if (cmdkOverlay && cmdkOverlay.classList.contains('show')) return;
       if (window.__heroMode === 'explore' && mode === 'explore' && !e.repeat) keysDown[e.key.toLowerCase()] = true;
       if (e.key === 'Escape') {
         if (mode !== 'explore') { e.preventDefault(); exitInspect(); }
@@ -1283,64 +1325,77 @@ const PROJECTS = getNodeProjects(locale);
     var exitProgressEl = document.getElementById('exit-progress');
     var t = 0;
     var panSpeed = 0.012;
+    var labelFrame = 0;
+    var originLookAt = new THREE.Vector3(0, 0, 0);
 
     function animate() {
       rafId = requestAnimationFrame(animate);
+      if (scenePaused) return;
+
+      if (mode === 'explore') {
+        if (keysDown['w'] || keysDown['arrowup']) dragRotX = Math.max(-0.9, dragRotX - panSpeed);
+        if (keysDown['s'] || keysDown['arrowdown']) dragRotX = Math.min(0.9, dragRotX + panSpeed);
+        if (keysDown['a'] || keysDown['arrowleft']) dragRotY -= panSpeed;
+        if (keysDown['d'] || keysDown['arrowright']) dragRotY += panSpeed;
+      }
+
+      var ip = easeOutExpo(introProgress());
+      var thinkZoom = decomposeActive ? -0.6 : 0;
+      var homeZ = 15 - ip * (15 - zoomZ) + thinkZoom;
+      cameraHome.set(0, 0, homeZ);
+
       if (!reducedMotion) {
         t += 0.0022;
-        if (mode === 'explore') {
-          if (keysDown['w'] || keysDown['arrowup']) dragRotX = Math.max(-0.9, dragRotX - panSpeed);
-          if (keysDown['s'] || keysDown['arrowdown']) dragRotX = Math.min(0.9, dragRotX + panSpeed);
-          if (keysDown['a'] || keysDown['arrowleft']) dragRotY -= panSpeed;
-          if (keysDown['d'] || keysDown['arrowright']) dragRotY += panSpeed;
-        }
         group.rotation.y = t + dragRotY + hoverRotY * 0.5;
-        group.rotation.x = Math.sin(t*0.6)*0.08 + dragRotX + hoverRotX * 0.3;
+        group.rotation.x = Math.sin(t * 0.6) * 0.08 + dragRotX + hoverRotX * 0.3;
 
-        var ip = easeOutExpo(introProgress());
-        var thinkZoom = decomposeActive ? -0.6 : 0;
-        var homeZ = 15 - ip * (15 - zoomZ) + thinkZoom;
-        cameraHome.set(0, 0, homeZ);
-
-        if (mode === 'explore') {
-          cameraTargetPos.lerp(cameraHome, 0.06);
-          cameraTargetLookAt.lerp(new THREE.Vector3(0,0,0), 0.06);
-        } else if (selectedNodeIndex >= 0) {
-          var worldPos = hubPositions[selectedNodeIndex].clone().applyMatrix4(group.matrixWorld);
-          var dir = worldPos.clone().normalize();
-          cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
-          cameraTargetLookAt.copy(worldPos);
-        }
-
-        camera.position.lerp(cameraTargetPos, 0.055);
-        currentLookAt.lerp(cameraTargetLookAt, 0.055);
-        camera.lookAt(currentLookAt);
-
-        var pulse = decomposeActive ? (1 + Math.sin(t*22)*0.06) : 1;
-        var breathing = (mode === 'explore' && !isDragging) ? (1 + Math.sin(t*1.4)*0.006) : 1;
+        var pulse = decomposeActive ? (1 + Math.sin(t * 22) * 0.06) : 1;
+        var breathing = (mode === 'explore' && !isDragging) ? (1 + Math.sin(t * 1.4) * 0.006) : 1;
         group.scale.setScalar(pulse * breathing);
 
-        var haloPulse = decomposeActive ? (0.9 + Math.sin(t*30)*0.25) : 0.7;
+        var haloPulse = decomposeActive ? (0.9 + Math.sin(t * 30) * 0.25) : 0.7;
         hubMeshes.forEach(function(m, i) {
           if (i !== selectedNodeIndex) m.userData.halo.scale.setScalar(haloPulse);
         });
 
         gridGroup.rotation.y = t * 0.15;
         gridGroup.position.y = -3.6 - (zoomZ - 9) * 0.05;
+      } else {
+        group.rotation.y = dragRotY;
+        group.rotation.x = dragRotX;
+        group.scale.setScalar(1);
+      }
 
-        if (exitProgressEl && mode === 'explore') {
-          if (zoomZ > 10) {
-            var pct = Math.min(100, Math.max(0, (zoomZ - 9)/(21.5 - 9)*100));
-            exitProgressEl.style.width = pct + '%';
-            exitProgressEl.classList.add('show');
-          } else {
-            exitProgressEl.classList.remove('show');
-          }
+      if (mode === 'explore') {
+        cameraTargetPos.lerp(cameraHome, 0.06);
+        cameraTargetLookAt.lerp(originLookAt, 0.06);
+      } else if (selectedNodeIndex >= 0) {
+        var worldPos = hubPositions[selectedNodeIndex].clone().applyMatrix4(group.matrixWorld);
+        var dir = worldPos.clone().normalize();
+        cameraTargetPos.copy(worldPos).add(dir.clone().multiplyScalar(1.6));
+        cameraTargetLookAt.copy(worldPos);
+      }
+
+      camera.position.lerp(cameraTargetPos, 0.055);
+      currentLookAt.lerp(cameraTargetLookAt, 0.055);
+      camera.lookAt(currentLookAt);
+
+      if (exitProgressEl && mode === 'explore') {
+        if (zoomZ > 10) {
+          var pct = Math.min(100, Math.max(0, (zoomZ - 9) / (21.5 - 9) * 100));
+          exitProgressEl.style.width = pct + '%';
+          exitProgressEl.classList.add('show');
+        } else {
+          exitProgressEl.classList.remove('show');
         }
       }
+
       group.updateMatrixWorld();
-      updateLabels();
-      updateTooltipPosition();
+      labelFrame++;
+      if (!lowPower || labelFrame % 2 === 0) {
+        updateLabels();
+        updateTooltipPosition();
+      }
       renderer.render(scene, camera);
     }
     animate();
