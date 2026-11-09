@@ -3,7 +3,7 @@ export const prerender = true;
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Footer from "../../components/Footer.astro";
-import { TIMELINE, SKILLS, BIO, APPROACH } from "../../data/experience";
+import { TIMELINE, SKILLS, BIO, APPROACH, EDUCATION } from "../../data/experience";
 
 const locale = "es";
 ---
@@ -55,6 +55,20 @@ const locale = "es";
         {SKILLS.map((skill, i) => (
           <div class="skill-chip reveal" style={{ animationDelay: `${i * 40}ms` }}>
             {skill}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="education-section">
+      <div class="section-label">FORMACIÓN</div>
+      <div class="approach-grid">
+        {EDUCATION[locale].map((item, i) => (
+          <div class="approach-card reveal" style={{ animationDelay: `${i * 100}ms` }}>
+            <div class="approach-title">{item.title}</div>
+            <div class="education-name">{item.name}</div>
+            {item.meta && <div class="education-meta">{item.meta}</div>}
+            {item.text && <div class="approach-text">{item.text}</div>}
           </div>
         ))}
       </div>
@@ -187,6 +201,10 @@ const locale = "es";
   .skills-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .skill-chip { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--color-line); padding: 8px 14px; border-radius: 20px; color: var(--color-text-dim); transition: border-color .2s, color .2s; }
   .skill-chip:hover { border-color: var(--color-accent-dim); color: var(--color-text); }
+
+  .education-section { margin-bottom: 80px; }
+  .education-name { font-family: var(--font-grotesk); font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .education-meta { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-faint); margin-bottom: 10px; }
 
   .social-section { margin-bottom: 80px; }
   .social-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }

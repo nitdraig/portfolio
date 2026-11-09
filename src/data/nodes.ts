@@ -501,8 +501,8 @@ export const NODE_DATA: Record<NodeKey, NodeData> = {
     tag: "BIO",
     title: t("Sobre mí", "About"),
     desc: t(
-      "PM y Fullstack Developer, fundador de Excelso. Catamarca, Argentina.",
-      "PM and Fullstack Developer, founder of Excelso. Catamarca, Argentina."
+      "PM y Fullstack Developer con MBA, fundador de Excelso. Catamarca, Argentina.",
+      "PM and Fullstack Developer with an MBA, founder of Excelso. Catamarca, Argentina."
     ),
     chips: ["Experiencia", "Trayectoria", "Contacto"],
     content: {
