@@ -43,7 +43,12 @@
   /* Let orbit / node clicks pass through copy to the WebGL canvas */
   pointer-events: none;
 }
-.hero-inner :is(form, button, textarea, a, input, select) {
+/* Only the command bar input and the modal (when open) capture pointer events; everything else passes through to the scene */
+.hero-inner .cmdbar-shell {
+  pointer-events: auto;
+}
+.hero-inner .cmdbar-modal.show,
+.hero-inner .cmdbar-modal.show :is(form, button, textarea, a, input, select) {
   pointer-events: auto;
 }
 .status-strip { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 11.5px; color: var(--color-text-dim); margin-bottom: 28px; letter-spacing: 0.02em; }
@@ -401,4 +406,11 @@ p.sub { margin-top: 20px; font-size: 15px; color: var(--color-text-dim); max-wid
   .node-tooltip { backdrop-filter: blur(4px); }
   #cmdk-overlay { backdrop-filter: blur(2px); }
   .node-detail { backdrop-filter: blur(6px); }
+}
+
+/* Decorative overlays must not block orbit drag or node clicks */
+.hero-controls,
+.telemetry,
+.status-strip {
+  pointer-events: none;
 }

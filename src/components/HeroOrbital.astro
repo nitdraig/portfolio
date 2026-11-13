@@ -756,8 +756,13 @@ const PROJECTS = getNodeProjects(locale);
     var focusedIndex = -1;
     var decomposeActive = false, decomposeTimer = null;
 
+    /* Orbit / node clicks work anywhere on the hero (including behind the copy), except over real UI */
+    var UI_SELECTOR = '.cmdbar-shell, .skip-btn, .cmdbar-modal, .node-panel, .node-detail, .node-dots, #back-to-orbit';
+    function isUiTarget(e) { return !!(e.target && e.target.closest && e.target.closest(UI_SELECTOR)); }
+
     /* Drag orbit */
-    canvas.addEventListener('pointerdown', function(e) {
+    heroEl.addEventListener('pointerdown', function(e) {
+      if (isUiTarget(e)) return;
       if (window.__heroMode !== 'explore' || mode !== 'explore') return;
       isDragging = true; dragMoved = 0;
       var dsx = e.clientX, dsy = e.clientY;
@@ -845,7 +850,8 @@ const PROJECTS = getNodeProjects(locale);
       updateTooltipPosition();
     });
 
-    canvas.addEventListener('click', function(e) {
+    heroEl.addEventListener('click', function(e) {
+      if (isUiTarget(e)) return;
       ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
       ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(ndc, camera);
